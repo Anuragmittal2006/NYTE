@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ball Rolling Down Hill</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #e0f7fa;
+        }
+        canvas {
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        let ball;
+        let obstacles = [];
+        let slope;
+
+        function setup() {
+            createCanvas(800, 600);
+            // Slope as a line from top-left to bottom-right
+            slope = { x1: 0, y1: 100, x2: width, y2: height - 100 };
+            // Ball starts near the top of the slope
+            ball = new Ball(50, 80, 20);
+            // Randomly placed obstacles (rocks)
+            for (let i = 0; i < 8; i++) {
+                let x = random(100, width - 100);
+                let y = random(slope.y1 + 50, slope.y2 - 50);
+                obstacles.push(new Obstacle(x, y, random(30, 60)));
+            }
+        }
+
+        function draw() {
+            background(135, 206, 235); // Sky blue background
+
+            // Draw the slope (hill)
+            stroke(139, 69, 19); // Brown color for hill
+            strokeWeight(10);
+            line(slope.x1, slope.y1, slope.x2, slope.y2);
+
+            // Draw obstacles (rocks)
+            for (let obs of obstacles) {
+                obs.display();
+            }
+
+            // Update and display ball
+            ball.update();
+            ball.checkSlopeCollision();
+            ball.checkObstacleCollisions();
+            ball.display();
+        }
+
+        class Ball {
+            constructor(x, y, r) {
+                this.pos = createVector(x, y);
+                this.vel = createVector(0, 0);
+                this.r = r;
+                this.gravity = createVector(0, 0.3); // Gravity pulling down
+                this.friction = 0.98; // Slows down slightly
+            }
+
+            update() {
+                this.vel.add(this.gravity);
+                this.vel.mult(this.friction); // Apply friction
+                this.pos.add(this.vel);
+            }
+
+            display() {
+                fill(255, 100, 100); // Red ball
+                noStroke();
+                ellipse(this.pos.x, this.pos.y, this.r * 2);
+            }
+
+            checkSlopeCollision() {
+                // Find closest point on slope line
+                let closest = this.closestPointOnLine(slope.x1, slope.y1, slope.x2, slope.y2);
+                let d = p5.Vector.dist(this.pos, closest);
+
+                if (d < this.r) {
+                    let normal = createVector(slope.y2 - slope.y1, slope.x1 - slope.x2).normalize();
+                    let relativeVel = this.vel.copy();
+                    let velAlongNormal = relativeVel.dot(normal);
+
+                    if (velAlongNormal < 0) {
+                        let restitution = 0.7; // Bounciness
+                        let impulse = - (1 + restitution) * velAlongNormal;
+                        this.vel.add(normal.mult(impulse));
+                        let penetration = this.r - d;
+                        this.pos.add(normal.mult(penetration));
+                    }
+                }
+            }
+
+            checkObstacleCollisions() {
+                for (let obs of obstacles) {
+                    let d = p5.Vector.dist(this.pos, obs.pos);
+                    if (d < this.r + obs.r) {
+                        let normal = p5.Vector.sub(this.pos, obs.pos).normalize();
+                        let relativeVel = this.vel.copy();
+                        let velAlongNormal = relativeVel.dot(normal);
+
+                        if (velAlongNormal < 0) {
+                            let restitution = 0.8; // Bounciness
+                            let impulse = - (1 + restitution) * velAlongNormal;
+                            this.vel.add(normal.mult(impulse));
+                            let penetration = this.r + obs.r - d;
+                            this.pos.add(normal.mult(penetration));
+                        }
+                    }
+                }
+            }
+
+            closestPointOnLine(x1, y1, x2, y2) {
+                let lineVec = createVector(x2 - x1, y2 - y1);
+                let ballVec = createVector(this.pos.x - x1, this.pos.y - y1);
+                let len = lineVec.mag();
+                let t = constrain(ballVec.dot(lineVec) / (len * len), 0, 1);
+                return createVector(x1 + lineVec.x * t, y1 + lineVec.y * t);
+            }
+        }
+
+        class Obstacle {
+            constructor(x, y, r) {
+                this.pos = createVector(x, y);
+                this.r = r;
+            }
+
+            display() {
+                fill(100); // Gray rocks
+                noStroke();
+                ellipse(this.pos.x, this.pos.y, this.r * 2);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ball Rolling Down a Hill</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            background: #87CEEB; /* Sky blue */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        canvas {
+            background: #228B22; /* Green ground */
+        }
+    </style>
+</head>
+<body>
+
+    <script>
+        const { Engine, Render, Runner, World, Bodies } = Matter;
+
+        // Create engine and world
+        const engine = Engine.create();
+        const world = engine.world;
+
+        // Create renderer
+        const render = Render.create({
+            element: document.body,
+            engine: engine,
+            options: {
+                width: 800,
+                height: 600,
+                wireframes: false
+            }
+        });
+
+        // Ball
+        const ball = Bodies.circle(100, 100, 20, {
+            restitution: 0.4,  // Bounciness
+            friction: 0.02,
+            density: 0.01
+        });
+
+        // Ground (Hill Shape)
+        const ground = Bodies.rectangle(400, 590, 800, 20, { isStatic: true });
+
+        // Rocks (Obstacles)
+        const rocks = [
+            Bodies.circle(300, 450, 30, { isStatic: true }),
+            Bodies.rectangle(500, 400, 60, 30, { isStatic: true }),
+            Bodies.circle(650, 350, 25, { isStatic: true }),
+            Bodies.rectangle(350, 300, 40, 40, { isStatic: true }),
+            Bodies.circle(480, 250, 35, { isStatic: true })
+        ];
+
+        // Add all objects to the world
+        World.add(world, [ball, ground, ...rocks]);
+
+        // Run engine and renderer
+        Engine.run(engine);
+        Render.run(render);
+    </script>
+
+</body>
+</html>
