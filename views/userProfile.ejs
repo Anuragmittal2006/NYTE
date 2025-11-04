@@ -1,0 +1,252 @@
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <!-- Link your CSS -->
+</head>
+<body>
+    <div class="profile-container">
+        <img style="  width: 150px;
+        height: 150px;
+        border-radius: 50%;" id="profilePic" src="<%= user.profilePhoto%>" alt="Profile Picture">
+        <h2 id="profileName"><%= user.name %></h2>
+        <p id="profileBio"><%= user.bio || 'No bio available' %></p>
+        <p id="profileDOB">DOB: <%= user.dob ? new Date(user.dob).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Not specified' %></p>
+        <button id="sendFriendRequestBtn">Send Friend Request</button>
+    </div>
+    <button id="startChatBtn">Start Chat</button>
+    <script>
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+    const sendFriendRequestBtn = document.getElementById('sendFriendRequestBtn');
+    const urlParams = new URLSearchParams(window.location.search);
+    const startChatBtn = document.getElementById('startChatBtn');
+    const receiverId = '<%=user._id%>';
+    const senderId = '<%= sender._id %>';
+
+   
+
+
+     // Function to check if a chat exists in IndexedDB
+     const checkChatExists = async () => {
+                const db = await openDB();
+                const tx = db.transaction('chats', 'readonly');
+                const store = tx.objectStore('chats');
+                const chat = await store.get(senderId + "_" + receiverId);
+                return chat; // Will return the chat if it exists, otherwise null
+            };
+
+            // Function to create a new chat in IndexedDB
+            const createNewChat = async () => {
+                const db = await openDB();
+                const tx = db.transaction('chats', 'readwrite');
+                const store = tx.objectStore('chats');
+                const newChat = {
+                    senderId,
+                    receiverId,
+                    messages: []  // Initializing with an empty message array
+                };
+                await store.put(newChat, senderId + "_" + receiverId); // Using a unique key
+                return newChat;
+            };
+
+            // Open IndexedDB
+            const openDB = async () => {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open('chatAppDB', 1);
+                    request.onerror = (event) => reject('Database failed to open');
+                    request.onsuccess = (event) => resolve(request.result);
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        if (!db.objectStoreNames.contains('chats')) {
+                            db.createObjectStore('chats'); // Create a store for chats
+                        }
+                    };
+                });
+            };
+
+            let db;
+
+function initDB() {
+    const request = indexedDB.open('ChatDB', 1);
+
+    request.onerror = (event) => {
+        console.error("Database error:", event.target.errorCode);
+    };
+
+    request.onsuccess = (event) => {
+        db = event.target.result; // Assign db
+        console.log("Database initialized successfully");
+    };
+
+    request.onupgradeneeded = (event) => {
+        db = event.target.result;
+        if (!db.objectStoreNames.contains("rooms")) {
+            db.createObjectStore("rooms", { keyPath: "roomId" });
+        }
+    };
+}
+
+// Call initDB during app initialization
+initDB();
+
+            // If the "Start Chat" button exists, handle the chat logic
+            if (startChatBtn) {
+    startChatBtn.addEventListener('click', async () => {
+        try {
+            const transaction = db.transaction("rooms", "readonly");
+            const store = transaction.objectStore("rooms");
+
+            // Check if room with receiverId exists
+            const request = store.openCursor();
+            let existingRoom = null;
+
+            request.onsuccess = async (event) => {
+                const cursor = event.target.result;
+                if (cursor) {
+                    const { roomId, receiverId: storedReceiverId } = cursor.value;
+
+                    if (storedReceiverId === receiverId) {
+                        existingRoom = roomId; // Room already exists
+                    }
+                    cursor.continue();
+                } else {
+                    // No more entries; proceed based on result
+                    if (existingRoom) {
+                        // Redirect to chat page with existing room ID
+                        window.location.href = `/chat?roomId=${existingRoom}`;
+                    } else {
+                        // Generate new room ID from backend
+                        try {
+                            const response = await fetch('/generate-room', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ senderId, receiverId }),
+                            });
+                            const { roomId } = await response.json();
+
+                            // Redirect to chat page with new room ID
+                            window.location.href = `/chat?roomId=${roomId}`;
+                        } catch (error) {
+                            console.error('Error generating room ID:', error);
+                        }
+                    }
+                }
+            };
+
+            request.onerror = () => {
+                console.error("Error checking rooms store.");
+            };
+        } catch (error) {
+            console.error("Error processing start chat action:", error);
+        }
+    });
+}
+
+
+
+
+
+            
+    // Function to update button based on friend request status
+    const updateButtonStatus = (status) => {
+        if (status === 'pending') {
+            sendFriendRequestBtn.textContent = 'Cancel Request';
+            sendFriendRequestBtn.onclick = cancelFriendRequest;
+        } 
+        if(status === 'friends'){
+            sendFriendRequestBtn.textContent = 'Remove Friend';
+            sendFriendRequestBtn.onclick = removeFriend;
+        }
+        
+        else {
+            sendFriendRequestBtn.textContent = 'Send Friend Request';
+            sendFriendRequestBtn.onclick = sendFriendRequest;
+        }
+    };
+    
+    // Function to send a friend request
+    const sendFriendRequest = async () => {
+        try {
+            const response = await fetch('/api/sendFriendRequest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ receiverId })
+            });
+            if (response.ok) {
+                alert("Friend request sent!");
+                updateButtonStatus('pending');
+            } else {
+                alert("Error sending friend request.");
+            }
+        } catch (error) {
+            console.error("Error:", error);
+        }
+    };
+
+    // Function to cancel a friend request
+    const cancelFriendRequest = async () => {
+        try {
+            const response = await fetch('/api/cancelFriendRequest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ receiverId })
+            });
+            if (response.ok) {
+                alert("Friend request canceled!");
+                updateButtonStatus('none');
+            } else {
+                alert("Error canceling friend request.");
+            }
+        } catch (error) {
+            console.error("Error:", error);
+        }
+    };
+
+    const removeFriend = async () => {
+        try {
+            const response = await fetch('/api/removeFriends', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ receiverId })
+            });
+            if (response.ok) {
+                alert("Friend removed!");
+                updateButtonStatus('none');
+            } else {
+                alert("Error removing friend.");
+            }
+        } catch (error) {
+            console.error("Error:", error);
+        }
+    };
+    // Check friend request status on page load
+    try {
+        const statusResponse = await fetch(`/api/checkFriendRequestStatus`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ receiverId }),  // Send receiverId in body
+    });
+        if (statusResponse.ok) {
+            const { requestStatus } = await statusResponse.json();
+            console.log(requestStatus);
+            updateButtonStatus(requestStatus);
+        }
+    } catch (error) {
+        console.error("Error checking friend request status:", error);
+    }
+
+
+    
+});
+
+
+    </script> <!-- Link your JS file -->
+</body>
+</html>

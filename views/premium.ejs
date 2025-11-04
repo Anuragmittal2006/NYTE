@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Go Premium</title>
+  <style>
+    body {
+      margin: 0; font-family: Arial, sans-serif;
+      background: #f7f9fc; color: #333;
+    }
+
+    header {
+      text-align: center;
+      padding: 20px;
+      background: #0066ff;
+      color: white;
+    }
+
+    .plans-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .plan {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin: 20px;
+      padding: 30px;
+      flex: 1;
+      max-width: 300px;
+      transition: transform 0.2s;
+    }
+
+    .plan:hover {
+      transform: translateY(-5px);
+    }
+
+    .plan h2 {
+      margin-top: 0;
+      color: #0066ff;
+    }
+
+    .price {
+      font-size: 1.4em;
+      margin: 10px 0;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    ul li::before {
+      content: "✔️";
+      margin-right: 8px;
+      color: green;
+    }
+
+    .buy-btn {
+      display: inline-block;
+      margin-top: 15px;
+      padding: 10px 20px;
+      background: #0066ff;
+      color: white;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .buy-btn:hover {
+      background: #004bbd;
+    }
+
+    /* Mobile layout (full screen scroll one-by-one) */
+    @media (max-width: 768px) {
+      .plans-container {
+        flex-direction: column;
+        align-items: center;
+      }
+      .plan {
+        max-width: 90%;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Go Premium, <%= email %> 🚀</h1>
+    <p>Your current plan: <%= plan || "Free" %></p>
+  </header>
+
+<div class="plans-container">
+  <% plans.forEach(p => { %>
+    <div class="plan">
+      <h2><%= p.name %></h2>
+      <ul>
+        <% p.features.forEach(f => { %>
+          <li><%= f %></li>
+        <% }) %>
+      </ul>
+
+      <% if (p.userPrice) { %>
+        <p class="price"><%= p.userPrice %></p>
+        <button class="buy" onclick="startCheckout('<%= p.id %>_user')">Buy for You</button>
+      <% } %>
+
+      <% if (p.bothPrice) { %>
+        <p class="price"><%= p.bothPrice %></p>
+        <button class="buy" onclick="buyForBoth('<%= p.id %>_both')">Buy for Both</button>
+      <% } %>
+    </div>
+  <% }) %>
+</div>
+
+
+
+
+
+   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+     <script>
+    const RAZORPAY_KEY_ID = "<%= razorpayKeyId %>";
+    function isValidEmail(email) {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email.toLowerCase());
+}
+
+    async function buyForBoth(planId) {
+  let partnerEmail = prompt("Enter your partner's email to activate premium for both:");
+  if (!partnerEmail) return;
+
+  // Step 1: check format
+  if (!isValidEmail(partnerEmail)) {
+    alert("❌ Invalid email format. Please enter a valid email.");
+    return;
+  }
+
+  // Step 2: check DB existence
+  const res = await fetch('/check-partner', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: partnerEmail })
+  });
+  const data = await res.json();
+
+  if (!data.exists) {
+    alert("❌ This email is not registered in our system.");
+    return;
+  }
+
+  // Step 3: confirm
+  const confirmOk = confirm(`✅ Found user: ${partnerEmail}\nDo you want to activate premium for both accounts?`);
+  if (!confirmOk) return;
+
+  // Step 4: proceed to checkout
+  startCheckout(planId, partnerEmail);
+}
+
+
+    async function startCheckout(planId, partnerEmail=null) {
+      try {
+        // 1) create order on server
+        const res = await fetch('/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ planId, partnerEmail  })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Order creation failed');
+
+        const { order, amountINR } = data;
+
+        // 2) open Razorpay checkout
+        const options = {
+          key: RAZORPAY_KEY_ID,
+          amount: order.amount,
+          currency: 'INR',
+          name: 'Lovechat Premium',
+          description: `${planId} plan`,
+          order_id: order.id,
+          handler: async function (response) {
+            // response: { razorpay_payment_id, razorpay_order_id, razorpay_signature }
+            const verifyRes = await fetch('/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+                planId,
+                partnerEmail
+              })
+            });
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {  window.location.href = verifyData.redirectUrl;  
+            } else {
+              alert('Payment verification failed: ' + (verifyData.message || 'try again'));
+            }
+          },
+          prefill: {
+            email: "<%= email %>"
+          },
+          theme: {
+            color: '#0a66ff'
+          }
+        };
+        const rzp = new Razorpay(options);
+        rzp.open();
+      } catch (err) {
+        console.error(err);
+        alert(err.message || 'Error in payment flow');
+      }
+    }
+  </script>
+  <script>
+
+
+  
+</script>
+
+</body>
+</html>

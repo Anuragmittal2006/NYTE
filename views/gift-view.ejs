@@ -1,0 +1,51 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A gift for you ❤️</title>
+<style>
+  body{font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; margin:0; background: linear-gradient(180deg,#fff8fb,#fffaf0); display:flex; align-items:center; justify-content:center; min-height:100vh}
+  .card{background:#fff; padding:28px; border-radius:16px; box-shadow:0 20px 50px rgba(17,24,39,0.08); max-width:720px; width:95%; text-align:center; position:relative; overflow:hidden}
+  .confetti { position:absolute; inset:0; pointer-events:none; }
+  .heart{font-size:46px; margin-bottom:8px; animation: pop 800ms ease;}
+  @keyframes pop {
+    0% { transform: scale(0.8); opacity:0 }
+    60% { transform: scale(1.12); opacity:1 }
+    100% { transform: scale(1); }
+  }
+  h1{margin:8px 0 0; color:#ff2d6f}
+  p{color:#333; margin:12px 0}
+  .small{color:#666}
+  .btn{display:inline-block;margin-top:18px;padding:10px 16px;border-radius:10px;background:#ff2d6f;color:white;text-decoration:none}
+  /* simple confetti animation using CSS gradients + transform */
+  .confetti::before, .confetti::after {
+    content:''; position:absolute; left:-10%; width:120%; height:120%; background-image: linear-gradient(90deg, rgba(255,77,102,0.08) 10%, rgba(255,200,127,0.06) 30%, rgba(255,247,166,0.05) 50%, rgba(154,199,255,0.06) 70%);
+    animation: slide 6s linear infinite;
+    top: -10%;
+    opacity:0.9;
+  }
+  .confetti::after { animation-duration:8s; opacity:0.6; transform: rotate(10deg); }
+  @keyframes slide { 0% { transform: translateY(-10%) } 50% { transform: translateY(10%) } 100% { transform: translateY(-10%) } }
+  .meta{margin-top:10px;color:#555}
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="confetti"></div>
+
+    <div class="heart">💝</div>
+
+    <h1>Hey <%= gift.partnerEmail %> — you’ve been gifted Premium!</h1>
+
+    <p><strong><%= gift.purchaserEmail %></strong> bought <strong><%= gift.planId.replace(/_/g,' ') %></strong> for you.</p>
+
+    <p class="small">Good news — your subscription was activated at the time of purchase. No action required. Enjoy premium features! 🎉</p>
+
+    <div class="meta">Purchased on <%= gift.createdAt.toLocaleString() %> · Expires (gift link): <%= gift.expiresAt.toLocaleDateString() %></div>
+
+    <a class="btn" href="/">Go to Dashboard</a>
+    <div style="margin-top:12px" class="small">If you don't see premium features, try logging out and logging back in, or refresh the app.</div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+</head>
+<body>
+    <h2>Login</h2>
+    <form action="/login" method="POST">
+        <label for="email">Email:</label>
+        <input  type="text" name="loginInput" placeholder="email or username" required>
+        <br><br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" placeholder="Enter Your Password" required>
+        <br><br>
+    
+        <button type="submit">Login</button>
+    </form>
+    <% if (typeof errorMessage !== 'undefined') { %>
+        <div class="error-message" style="color: red;">
+            <%= errorMessage %>
+        </div>
+    <% }
+     %>
+    
+    <% if (typeof errorMessage2 !== 'undefined') { %>
+        <div class="error-message" style="color: blue;">
+            <%= errorMessage2 %>
+        </div>
+    <% } %>
+
+    <a href="/auth/google"><button>login with google</button></a>
+    <a href="/auth/facebook">
+        <button>Login with Facebook</button>
+    </a>
+    
+    <p>Don't have an account? <a href="/register">Register here</a></p>
+    <p>forgot password ? <a href="/forgot-password">click here</a></p>
+
+
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+   
+<script>
+    function validateCaptcha() {
+        var captchaResponse = grecaptcha.getResponse();
+        if (captchaResponse.length === 0) {
+            document.getElementById("captchaError").style.display = "block";
+            return false;
+        }
+        return true;
+    }</script>
+<script type="module">// Client-side JavaScript
+    async function checkLoginStatus() {
+        const response = await fetch('/protected', { method: 'GET', credentials: 'include' });
+        if (response.ok) {
+            // User is logged in
+            window.location.href = '/protected'; // Redirect to protected page
+        }else{console.error('acceess denied:', response.status)}
+    }
+    
+    checkLoginStatus();
+    </script>
+</body>
+</html>

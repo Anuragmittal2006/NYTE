@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="/db.js"></script>
+    <script src="/settings.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Chat with <%= receiverName %></title>
+    <link rel="stylesheet" href="/CSS/chat.css" />
+</head>
+<body class="theme-premium">
+    <div class="chat-container">
+        <div class="header" id="partner-profile">
+            <img src="<%= receiverProfilePhoto %>" alt="<%= receiverName %>'s profile" />
+            <h2><%= receiverName %></h2>
+            <span id="status">Offline</span>
+
+<button id="search-button">🔍</button>
+            <button id="videoCallBtn">📞</button>
+            <button id="voiceCallBtn">🎥</button>
+            <button id="vanish-btn">🚨</button>
+
+            <div id="search-modal" style="display:none; position:fixed; inset:0; background:#0008; z-index:999;">
+  <div style="background:#fff; width:80%; margin:40px auto; padding:20px; border-radius:8px;">
+    <input id="search-input" type="text" placeholder="Search images..." style="width:70%; padding:8px;" />
+    <button id="search-go"style="color: black">Search</button>
+    <div id="search-results" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; max-height:400px; overflow:auto;"></div>
+    <div id="preview-box" style="display:none; text-align:center; margin-top:20px;">
+      <img id="preview-img" src="" style="max-width:100%; border:1px solid #ccc;"/>
+      <br/>
+      <button id="send-selected"style="color: black">Send</button>
+      <button id="cancel-preview"style="color: black">Cancel</button>
+    </div>
+    <button id="close-modal">Close</button>
+  </div>
+</div>
+            <div id="callScreen" style="display: none;">
+                <video id="localVideo" autoplay muted></video>
+                <video id="remoteVideo" autoplay></video>
+                <div class="controls">
+                    <button id="flipCamera">🔄 Flip</button>
+                    <button id="toggleCamera">📷 Off</button>
+                    <button id="muteMic">🔇 Mute</button>
+                    <button id="endCall">❌ End</button>
+                </div>
+            </div>
+
+            <div id="incomingCallPopup" style="display: none;">
+                <p id="callerName"></p>
+                <p id="callTypeText">Incoming Call.</p>
+                <button id="answerCall">✅ Answer</button>
+                <button id="rejectCall">❌ Decline</button>
+                <button id="toggleIncomingVideo" style="display:none;">📷 Video Off</button>
+            </div>
+
+            <span id="secret-chat-label" style="display:none; color:red; font-weight:bold;">(Secret Chat)</span>
+            <button class="timer" id="set-timer-btn">⏳ Set Timer</button>
+            <div id="timer-popup" class="popup">
+                <div class="popup-content">
+                    <h3>Set Disappearing Timer</h3>
+                    <select id="timer-options">
+                        <option value="none">None</option>
+                        <option value="10s">10 seconds</option>
+                        <option value="30s">30 seconds</option>
+                        <option value="1m">1 minute</option>
+                        <option value="5m">5 minutes</option>
+                    </select>
+                    <button id="save-timer">Save</button>
+                </div>
+            </div>
+        </div>
+   <div id="action-bar">
+                <button id="reply-btn" style="display: none;">↩️ Reply</button>
+                <button id="delete-msg-btn">🗑 Delete</button>
+                <button id="unsend" style="display: none">pull back</button>
+                <button id="edit-btn" style="display: none;">Edit</button>
+                <button id="copy-btn" style="display: none;">Copy</button>
+
+
+            </div>
+            <div id="copy-toast" style="
+    display:none;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    z-index: 9999;
+">
+    Message copied!
+</div>
+
+
+        <div id="chat-box" class="chat-box"></div>
+
+        <div class="input-wrapper">
+            <div id="reply-preview" style="display: none;"></div>
+            <div id="preview-container"></div>
+            <div class="input-container">
+                <div id="editing-popup" style="display:none; font-size:13px; background:#fffbcc; padding:5px 10px; border-radius:4px; margin-bottom:4px; position:relative;">
+                    Editing message
+                    <span id="cancel-edit" style="cursor:pointer; margin-left:10px; font-weight:bold;">✖</span>
+                </div>
+
+                <input type="text" id="message-input" placeholder="Type a message" />
+                <button id="media-button">📎</button>
+                <button id="send-button">Send</button>
+                <button id="update-button" style="display:none;">Update</button>
+            </div>
+
+            <div id="media-options" style="display:none;">
+                <button id="send-image">Image</button>
+                <button id="send-video">Video</button>
+                <button id="send-audio">Audio</button>
+                <button id="send-document">Document</button>
+            </div>
+        </div>
+
+        <div id="media-modal" class="modal">
+            <span id="close-btn" class="close">&times;</span>
+            <img id="modal-image" class="modal-content" />
+            <video id="modal-video" class="modal-content" controls></video>
+            <audio id="modal-audio" class="modal-content" controls></audio>
+            <a id="modal-document" class="modal-content" target="_blank"></a>
+            <button id="download-btn">Download</button>
+        </div>
+    </div>
+
+    <!-- server -> client config (no executable JS) -->
+    <script id="chat-config" type="application/json"><%- JSON.stringify({
+        senderId: senderId,
+        receiverId: receiverId,
+        senderName: senderName,
+        receiverName: receiverName,
+        receiverProfilePhoto: receiverProfilePhoto,
+        receiverPublicKey: receiverPublicKey,
+        // roomId may be rendered from query param; optionally pass it:
+        roomId: typeof roomId !== 'undefined' ? roomId : null,
+        plan: plan
+    }) %></script>
+
+    <!-- external libs -->
+    <script type="module" src="https://unpkg.com/browser-image-compression@2.0.2/dist/browser-image-compression.js" defer></script>
+    <script src="/socket.io/socket.io.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js" defer></script>
+
+    <!-- app scripts: socket-init MUST load first -->
+    <script src="/public/JS/socket-init.js" defer></script>
+    <script src="/public/JS/ui.js" defer></script>
+    <script src="/public/JS/messages.js" defer></script>
+    <script src="/public/JS/calls.js" defer></script>
+</body>
+</html>

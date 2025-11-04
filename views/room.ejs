@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Room</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #2C2F33;
+            color: #FFF;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .chat-container {
+            background-color: #23272A;
+            border-radius: 15px;
+            max-width: 600px;
+            padding: 30px;
+            width: 100%;
+        }
+
+        #userList {
+            background-color: #2C2F33;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        #messages {
+            height: 200px;
+            overflow-y: auto;
+            background-color: #2C2F33;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: #7289DA;
+            color: white;
+            margin: 5px 0;
+        }
+
+        .my-message {
+            background-color: #43B581;
+        }
+
+        input,
+        button {
+            margin-top: 10px;
+        }
+
+        input {
+            background-color: #2C2F33;
+            color: #FFF;
+            border: 2px solid #7289DA;
+            border-radius: 10px;
+            padding: 12px;
+            width: calc(100% - 85px);
+        }
+
+        input::placeholder {
+            color: #BBB;
+        }
+
+        button {
+            background-color: #7289DA;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            width: 70px;
+            margin-left: 5px;
+        }
+
+        button:hover {
+            background-color: #5a6fb9;
+        }
+
+        #timer {
+            margin-top: 10px;
+        }
+
+        #timerIcon {
+            display: flex;
+            align-items: center;
+        }
+
+        #timerInput {
+            width: 60px;
+            /* Adjust width as needed */
+            margin-left: 5px;
+            border: 1px solid #ccc;
+            /* Basic styling */
+            border-radius: 4px;
+            padding: 2px;
+            display: none;
+            /* Initially hidden */
+        }
+
+        #call-popup {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #fff;
+            border: 1px solid #ccc;
+            padding: 10px;
+            z-index: 1000;
+        }
+
+        #video-grid {
+            display: flex;
+            justify-content: space-around;
+        }
+
+        video {
+            width: 300px;
+            height: 200px;
+            border: 1px solid #ccc;
+        }
+
+
+
+        #disintegrate-btn {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+        }
+
+        #disintegrate-btn i {
+            margin-right: 5px;
+            /* Add some space between the icon and text */
+        }
+
+        #disintegrate-btn:hover {
+            background-color: #e63946;
+            /* Darker red on hover */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chat-container">
+
+        <h2><i class="fas fa-users"></i> Room Chat</h2>
+        <!-- Add this div for the timer icon in your room.html file -->
+        <div id="timerIcon" style="position: absolute; top: 10px; right: 10px;">
+            <label for="timerInput" style="cursor: pointer;">
+                <i class="fas fa-clock"></i> <!-- Font Awesome Clock Icon -->
+            </label>
+
+            <input type="number" id="timerInput" placeholder="Set Timer (s)" min="0" />
+        </div>
+        <button id="disintegrate-room-btn" onclick="disintegrateRoom()"><i
+                class=" fas fa-bomb"></i>DisintegrateRoom</button>
+
+
+
+        <div id="userList">
+            <h4>Connected Users:</h4>
+            <!-- User list will be displayed here -->
+        </div>
+
+        <div id="messages">
+            <!-- Messages will be displayed here -->
+        </div>
+
+        <div class="d-flex">
+            <input type="text" id="messageInput" placeholder="Type your message here...">
+            <!-- Add this input field for the timer in your room.html file -->
+
+
+            <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+
+        const socket = io();
+
+        // Get roomId from URL
+        const roomId = window.location.pathname.split('/')[2];
+        let username = '';
+
+        // Prompt user for their name
+        while (!username) {
+            username = prompt('Enter your name:');
+        }
+
+        // Join the room
+        socket.emit('joinRoom', { roomId, username });
+
+        // Receive messages
+        socket.on('message', ({ username, message, timer }) => {
+            const messages = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.innerHTML = `<strong>${username}:</strong> ${message}`;
+            messages.appendChild(messageDiv);
+
+            // If a timer is set, delete the message after the specified time
+            if (timer && timer > 0) {
+                setTimeout(() => {
+                    messages.removeChild(messageDiv);
+                }, timer * 1000);
+            }
+        });
+
+        // Update user list
+        socket.on('updateUserList', (users) => {
+            const userList = document.getElementById('userList');
+            userList.innerHTML = `<h3>Connected Users:</h3>` + users.map(user => `<p>${user}</p>`).join('');
+        });
+
+        // Send message
+        function sendMessage() {
+            const message = document.getElementById('messageInput').value;
+            const timer = document.getElementById('timerInput').value; // Get timer value (undefined if not set)
+
+            if (message) {
+                socket.emit('sendMessage', { roomId, message, timer: timer ? parseInt(timer) : 0 }); // Send the timer value, default to 0
+                document.getElementById('messageInput').value = '';
+
+            }
+        }
+        document.getElementById('timerIcon').addEventListener('click', () => {
+            const timerInput = document.getElementById('timerInput');
+            if (timerInput.style.display === 'none') {
+                timerInput.style.display = 'block';
+                timerInput.focus();
+            } else {
+                timerInput.style.display = 'none';
+            }
+        });
+        // List of URLs for random redirection
+        const redirectUrls = [
+
+            'https://www.wikipedia.org',
+            'https://www.bbc.com',
+            'https://www.indiatoday.in',
+            'https://www.flipkart.com',
+            'https://www.accuweather.com',
+            'https://www.amazon.in',
+            'https://mail.google.com',
+            'https://in.pinterest.com/'
+
+        ];
+
+        // Function to randomly select a URL from the list
+        function getRandomUrl() {
+            const randomIndex = Math.floor(Math.random() * redirectUrls.length);
+            return redirectUrls[randomIndex];
+        }
+
+
+
+        function disintegrateRoom() {
+            // Emit the disintegrateRoom event to the server
+            socket.emit('disintegrateRoom', roomId);
+        }
+
+
+        // Listen for the disintegrateRoom event
+        socket.on('disintegrateRoom', () => {
+            // Clear sessionStorage and localStorage
+            sessionStorage.clear();
+            localStorage.clear();
+
+            // Replace history and close the tab
+            history.replaceState(null, null, " ");
+            const randomUrl = getRandomUrl();
+            location.replace(randomUrl);
+
+            // Clear chat messages from the DOM
+            const messages = document.getElementById('messages');
+            while (messages.firstChild) {
+                messages.removeChild(messages.firstChild);
+            }
+
+
+        });
+
+        // Handle sound detection (example: "Clear chat")
+        const soundTrigger = () => {
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'en-US';
+            recognition.continuous = true;
+
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript.toLowerCase();
+                if (transcript.includes("erase it")) {
+                    disintegrateRoom();
+                }
+            };
+
+
+            recognition.onerror = function (event) {
+                status.textContent = `Error: ${event.error}`;
+            };
+
+            recognition.onend = function () {
+                // Automatically restart recognition after it stops
+                status.textContent = 'Restarting microphone...';
+                setTimeout(() => {
+                    recognition.start(); // Restart after a small delay
+                }, 0);  // Adjust the delay time as needed (e.g., 1000ms = 1 second)
+            };
+            recognition.start();
+        };
+        // Start sound detection
+        soundTrigger();
+    </script>
+
+
+</body>
+
+</html>

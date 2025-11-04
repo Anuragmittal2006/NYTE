@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatApp</title>
+    <script src="db.js"></script>
+    <style>
+        /* Default Light Mode */
+        :root {
+            --bg-color: white;
+            --text-color: black;
+            --dropdown-bg: #f1f1f1;
+            --dropdown-hover: #ddd;
+            --button-bg: #4CAF50;
+            --button-hover: #3e8e41;
+        }
+
+        /* Dark Mode */
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --text-color: white;
+            --dropdown-bg: #333;
+            --dropdown-hover: #444;
+            --button-bg: #555;
+            --button-hover: #777;
+        }
+
+        /* Auto System Theme */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #121212;
+                --text-color: white;
+                --dropdown-bg: #333;
+                --dropdown-hover: #444;
+                --button-bg: #555;
+                --button-hover: #777;
+            }
+        }
+
+        /* Apply Theme */
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: Arial, sans-serif;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* Dropdown Styles */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropbtn {
+            background-color: var(--button-bg);
+            color: white;
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: var(--dropdown-bg);
+            min-width: 160px;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+
+        .dropdown-content a {
+            color: var(--text-color);
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background 0.3s;
+        }
+
+        .dropdown-content a:hover {
+            background-color: var(--dropdown-hover);
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown:hover .dropbtn {
+            background-color: var(--button-hover);
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            margin-top: 20px;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            background-color: var(--button-bg);
+            color: white;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--button-hover);
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <h1>ChatApp</h1>
+        <h2>Landing Page</h2>
+
+        <!-- Dropdown Menu -->
+        <div class="dropdown">
+            <button class="dropbtn">Menu</button>
+            <div class="dropdown-content">
+                <a href="/login">Login</a>
+                <a href="/register">SignUp</a>
+                <a href="/pricing">Pricing</a>
+            </div>
+        </div>
+
+        <!-- Theme Toggle Dropdown -->
+        <div class="dropdown">
+            <button class="dropbtn">Theme</button>
+            <div class="dropdown-content">
+                <a href="#" onclick="setTheme('system')">System Default</a>
+                <a href="#" onclick="setTheme('light')">Light Mode</a>
+                <a href="#" onclick="setTheme('dark')">Dark Mode</a>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

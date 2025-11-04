@@ -1,0 +1,602 @@
+/* =========================================================
+   chat.css — Fully refactored, theme-driven, mobile-first
+   ========================================================= */
+
+/* ===========================
+   THEME VARIABLES (DEFAULT: Romantic Soft)
+   Change these to affect the whole app.
+   =========================== */
+:root{
+  /* Primary colors */
+  --primary: #e91e63;               /* header / primary buttons (romantic pink) */
+  --primary-strong: #d81b60;
+  --accent: #ff4081;                /* accent */
+  --success: #4caf50;
+  --danger: #e53935;
+  --muted: #757575;
+
+  /* Backgrounds & surfaces */
+  --background-color: #fff7fb;      /* page background */
+  --chat-background: linear-gradient(to bottom, #ffffff, #fff7fc); /* chat area subtle */
+  --surface: #ffffff;               /* cards, bubbles, modals */
+
+  /* Text */
+  --text-color: #333333;
+  --text-on-primary: #ffffff;
+
+  /* Message bubbles */
+  --sent-msg-bg: #fce4ec;
+  --received-msg-bg: #ffffff;
+
+  /* Buttons */
+  --btn-bg: var(--primary);
+  --btn-text: var(--text-on-primary);
+  --btn-hover: var(--primary-strong);
+  --btn-disabled-bg: #bdbdbd;
+  --btn-disabled-text: #efefef;
+
+  /* Borders / dividers */
+  --border-color: #e0e0e0;
+  --shadow-color: rgba(0,0,0,0.08);
+
+  /* Scrollbars */
+  --scrollbar-thumb: rgba(0,0,0,0.12);
+  --scrollbar-track: transparent;
+
+  /* Popups / modal */
+  --popup-bg: var(--surface);
+  --popup-text: var(--text-color);
+
+  /* Sizes */
+  --header-height: 68px;
+  --avatar-size: 56px;
+  --radius: 14px;
+}
+
+/* ===========================
+   Premium Theme (Purple Gradient)
+   Apply: <body class="theme-premium">
+   =========================== */
+.theme-premium{
+  --primary: #6a11cb; /* gradient base shown in header below */
+  --primary-strong: #5b0db8;
+  --accent: #2575fc;
+  --background-color: #f9f9ff;
+  --chat-background: linear-gradient(180deg,#fbfbff,#f3f6ff);
+  --surface: #ffffff;
+  --text-color: #222222;
+
+  --sent-msg-bg: #ede7f6;
+  --received-msg-bg: #ffffff;
+
+  --btn-bg: linear-gradient(135deg,#6a11cb,#2575fc);
+  --btn-hover: #5b0db8;
+  --btn-text: #ffffff;
+  --btn-disabled-bg: #bdbdbd;
+  --btn-disabled-text: #f6f6f6;
+
+  --border-color: #d9d9e6;
+  --scrollbar-thumb: rgba(90,11,180,0.35);
+  --popup-bg: #fff;
+  --popup-text: #222;
+}
+
+/* ===========================
+   System dark mode (auto)
+   Browser will apply if user has dark preference.
+   =========================== */
+@media (prefers-color-scheme: dark) {
+  :root{
+    --background-color: #0f1115;
+    --chat-background: linear-gradient(180deg,#0b0c0e,#121214);
+    --surface: #121214;
+    --text-color: #e8eef9;
+    --text-on-primary: #ffffff;
+
+    --sent-msg-bg: #263238;
+    --received-msg-bg: #1e272b;
+
+    --btn-disabled-bg: #2c2c2c;
+    --border-color: #222325;
+
+    --scrollbar-thumb: rgba(255,255,255,0.06);
+    --popup-bg: #121214;
+    --popup-text: #e6eefb;
+  }
+}
+
+/* ===========================
+   BASIC LAYOUT: mobile-first
+   =========================== */
+* { box-sizing: border-box; -webkit-font-smoothing:antialiased; }
+html,body { height:100%; }
+body{
+  margin:0;
+  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+  background: var(--background-color);
+  color: var(--text-color);
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* container */
+.chat-container{
+  display:flex;
+  flex-direction:column;
+  min-height: 100dvh; /* good for mobile browsers */
+  height: 100dvh;
+  margin: 0;
+  border-radius: 0;
+  overflow: hidden;
+  background: transparent;
+  box-shadow: 0 6px 18px var(--shadow-color);
+}
+
+/* ===========================
+   HEADER
+   =========================== */
+.header{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  padding: 10px 12px;
+  min-height: var(--header-height);
+  background: var(--primary);
+  color: var(--text-on-primary);
+  box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  flex-wrap: wrap;
+}
+
+/* if header-bg is gradient from theme, support both string and color */
+.header{
+  /* graceful: if --btn-bg is gradient for premium, header should also accept gradient when theme sets it */
+  background: var(--header-bg, var(--primary));
+}
+.theme-premium .header{
+  /* premium header gradient (overrides var fallback) */
+  background: linear-gradient(135deg,#6a11cb,#2575fc);
+}
+
+.header img{
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.14);
+  object-fit: cover;
+  flex-shrink:0;
+}
+
+.header h2{
+  margin:0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-on-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex:1;
+}
+
+#status{
+  font-size: 13px;
+  color: rgba(255,255,255,0.92);
+  margin-left: 6px;
+}
+
+/* header buttons: compact style */
+.header button{
+  background: transparent;
+  color: var(--text-on-primary);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  flex-shrink:0;
+}
+.header button:hover{
+  background: rgba(255,255,255,0.06);
+}
+
+/* vanish / secret label */
+#secret-chat-label { color: #ffb3c6; font-weight:700; }
+
+/* ===========================
+   CHAT AREA
+   =========================== */
+.chat-box{
+  flex:1;
+  padding: 12px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  overflow-y:auto;
+  background: var(--chat-background);
+}
+
+/* scrollbar */
+.chat-box::-webkit-scrollbar{ width:8px; }
+.chat-box::-webkit-scrollbar-thumb{ background: var(--scrollbar-thumb); border-radius:6px; }
+.chat-box::-webkit-scrollbar-track{ background: var(--scrollbar-track); }
+
+/* Message bubble base */
+.message{
+  max-width: 85%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+/* sent / received alignment */
+.message.sent{
+  align-self:flex-end;
+  background: var(--sent-msg-bg);
+  text-align: right;
+  border-bottom-right-radius: 6px;
+  color: var(--text-color);
+}
+
+.message.received{
+  align-self:flex-start;
+  background: var(--received-msg-bg);
+  text-align:left;
+  border-bottom-left-radius: 6px;
+  color: var(--text-color);
+}
+
+/* small meta text */
+.message small{
+  display:block;
+  font-size:11px;
+  color: var(--muted);
+  margin-top:6px;
+}
+
+/* selected state */
+.message.selected{
+  outline: 2px solid rgba(0,132,255,0.18);
+  background: rgba(0,132,255,0.06);
+}
+
+/* date separators */
+.date-separator{
+  text-align:center;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight:600;
+  margin: 6px 0;
+}
+
+/* ===========================
+   INPUT / MEDIA / PREVIEW
+   =========================== */
+.input-wrapper{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  padding: 8px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(255,255,255,0.9));
+  border-top: 1px solid var(--border-color);
+  position: sticky;
+  bottom: 0;
+  z-index: 40;
+}
+
+/* reply preview */
+#reply-preview{
+  background: linear-gradient(90deg, rgba(255,240,245,1), rgba(255,250,250,1));
+  border-left: 4px solid var(--accent);
+  padding: 8px 10px;
+  border-radius: 8px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:13px;
+  color:var(--text-color);
+}
+
+#preview-container{ display:flex; gap:10px; flex-wrap:wrap; }
+
+/* input container */
+.input-container{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+
+.input-container input[type="text"],
+.input-container input[type="search"]{
+  flex:1;
+  padding:10px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text-color);
+  font-size: 14px;
+  outline: none;
+}
+
+.input-container input:focus{ box-shadow: 0 4px 14px rgba(0,0,0,0.06); }
+
+/* buttons (send, media) */
+.input-container button{
+  padding:10px 14px;
+  border-radius: 999px;
+  border: none;
+  background: var(--btn-bg);
+  color: var(--btn-text);
+  cursor: pointer;
+  font-weight:600;
+  font-size:13px;
+  transition: transform .08s ease, background .12s ease;
+}
+.input-container button:hover{ background: var(--btn-hover); transform: translateY(-1px); }
+.input-container button:active{ transform: translateY(0); }
+
+.input-container button.disabled{
+  background: var(--btn-disabled-bg);
+  color: var(--btn-disabled-text);
+  cursor: not-allowed;
+  opacity: 0.9;
+}
+
+/* media options */
+#media-options{
+  display:flex;
+  gap:8px;
+  margin-top:4px;
+}
+#media-options button{
+  padding:8px 10px;
+  background: linear-gradient(180deg, #fafafa, #f0f0f0);
+  border: 1px solid var(--border-color);
+  border-radius:8px;
+  cursor:pointer;
+  font-size:13px;
+}
+
+/* preview items */
+.preview-item{
+  width:64px;
+  height:64px;
+  border-radius:10px;
+  overflow:hidden;
+  border:1px solid var(--border-color);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background: var(--surface);
+  position:relative;
+}
+.preview-item img, .preview-item video{ width:100%; height:100%; object-fit:cover; }
+
+/* remove / close */
+.remove-btn{
+  position:absolute;
+  top:6px;
+  right:6px;
+  background: rgba(0,0,0,0.6);
+  color:#fff;
+  width:20px; height:20px; border-radius:50%;
+  border:none; font-size:12px; cursor:pointer;
+}
+
+/* file preview wrapper */
+.file-preview{ width:100%; height:100px; background:var(--surface); border-radius:8px; display:flex; align-items:center; justify-content:center; border:1px dashed var(--border-color); z-index:2; }
+
+/* ===========================
+   MODALS / POPUPS / TIMERS
+   =========================== */
+.modal, #media-modal{
+  display:none;
+  position: fixed;
+  top:0; left:0; width:100%; height:100%;
+  background: rgba(0,0,0,0.76);
+  justify-content:center;
+  align-items:center;
+  z-index:9998;
+  padding:20px;
+}
+.modal .modal-content, #media-modal .modal-content{
+  max-width: 92%;
+  max-height: 88%;
+  background: var(--surface);
+  color: var(--text-color);
+  border-radius: 10px;
+  overflow: auto;
+  padding: 12px;
+}
+.close{ position:absolute; right:18px; top:18px; color:#fff; font-size:28px; cursor:pointer; }
+
+.popup{
+  display:none;
+  position:fixed;
+  left:50%;
+  top:50%;
+  transform: translate(-50%,-50%);
+  background: var(--popup-bg);
+  color: var(--popup-text);
+  padding:18px;
+  border-radius:10px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+  z-index:1000;
+  width:320px;
+}
+
+/* popup form elements */
+.popup-content h3{ margin:0 0 8px 0; font-size:18px; color:var(--text-color); }
+.popup-content label{ display:block; color:var(--muted); margin-bottom:6px; }
+.popup-content select, .popup-content input{
+  width:100%;
+  padding:8px;
+  border:1px solid var(--border-color);
+  border-radius:6px;
+  margin-bottom:10px;
+  background: var(--surface);
+  color:var(--text-color);
+}
+
+/* popup actions */
+.popup-actions{ display:flex; justify-content:space-between; gap:8px; }
+.popup-actions button{ padding:8px 12px; border-radius:6px; border:none; cursor:pointer; }
+.popup-actions button:first-child{ background:var(--btn-bg); color:var(--btn-text); }
+.popup-actions button:last-child{ background: #f0f0f0; color:var(--text-color); }
+
+/* timer specifics */
+.time-selectors{ display:flex; gap:8px; margin-bottom:10px; }
+.time-selectors div{ display:flex; flex-direction:column; align-items:center; }
+.time-selectors input{ width:64px; padding:6px; border:1px solid var(--border-color); border-radius:6px; text-align:center; }
+
+/* hide default timer button unless enabled */
+.timer{ display:none; }
+
+/* ===========================
+   CALL UI / VIDEO
+   =========================== */
+#callScreen{
+  display:none;
+  position: fixed;
+  right:12px;
+  bottom: 80px;
+  width: 320px;
+  height: 420px;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  z-index: 9997;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+#localVideo, #remoteVideo{
+  width:100%;
+  height:100%;
+  object-fit: cover;
+}
+.call-active #localVideo{ width:50%; height:50%; }
+.call-active #remoteVideo{ width:100%; height:100%; opacity:1; }
+
+#incomingCallPopup{
+  display:none;
+  position:fixed;
+  left:50%;
+  top:50%;
+  transform: translate(-50%,-50%);
+  background: var(--surface);
+  color:var(--text-color);
+  padding:16px;
+  border-radius:10px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.2);
+  z-index:10001;
+}
+
+/* call controls */
+.controls{ display:flex; gap:8px; justify-content:center; padding:8px; }
+.controls button{ padding:8px 10px; border-radius:8px; border:none; cursor:pointer; background: rgba(255,255,255,0.06); color:var(--text-on-primary); }
+
+/* ===========================
+   ACTION BAR (select actions)
+   =========================== */
+#action-bar{
+  position: fixed;
+  left:0; right:0;
+  bottom: 0;
+  display:none;
+  justify-content:flex-end;
+  gap:8px;
+  padding:10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.96));
+  z-index:9999;
+  border-top:1px solid var(--border-color);
+}
+#delete-msg-btn{ background: var(--danger); color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; }
+
+/* ===========================
+   Uiverse eye toggle (secret chat)
+   =========================== */
+.container{ --color:var(--text-color); --size:30px; display:flex; justify-content:center; align-items:center; position:relative; cursor:pointer; font-size:var(--size); user-select:none; fill:var(--color); }
+.container .eye, .container .eye-slash{ position:absolute; transition:transform .3s ease; }
+.container input{ position:absolute; opacity:0; height:0; width:0; }
+
+/* ===========================
+   Heart pulse animation (I Miss You)
+   =========================== */
+.heart-pulse{
+  position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); font-size:80px; opacity:0; animation:pulse 1.5s ease-out forwards; z-index:9999; pointer-events:none;
+}
+@keyframes pulse{
+  0%{ transform:translate(-50%,-50%) scale(0.8); opacity:0; }
+  30%{ transform:translate(-50%,-50%) scale(1.3); opacity:1; }
+  60%{ transform:translate(-50%,-50%) scale(1); opacity:0.9; }
+  100%{ transform:translate(-50%,-50%) scale(0.8); opacity:0; }
+}
+
+/* ===========================
+   Misc helpers
+   =========================== */
+.hidden{ display:none !important; }
+.select-msg{ margin-right:8px; width:16px; height:16px; cursor:pointer; }
+
+/* ===========================
+   Responsive breakpoints
+   =========================== */
+/* small phones */
+@media (max-width:420px){
+  .header{ padding:10px; gap:8px; }
+  .header img{ width:48px; height:48px; }
+  .header h2{ font-size:15px; }
+  .message{ font-size:13px; max-width:92%; padding:9px 12px; }
+  .input-container input{ font-size:14px; padding:10px; }
+  .input-container button{ padding:9px 12px; font-size:13px; }
+  #callScreen{ width: 280px; height:360px; right:8px; bottom:90px; }
+  .chat-container{ border-radius:0; }
+}
+
+/* landscape / tablet */
+@media (min-width: 900px){
+  .chat-container{ max-width:1100px; margin: 18px auto; border-radius:12px; height: calc(100dvh - 36px); }
+  .message{ max-width:66%; }
+}
+
+/* Locked state style */
+.locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+    position: relative;
+}
+
+.locked::after {
+    content: " 🔒";
+    position: absolute;
+    right: -15px;
+}
+.ad-message .ad-container {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.ad-message .ad-media {
+  max-width: 250px;
+  border-radius: 10px;
+  display: block;
+}
+
+.ad-message .ad-tag {
+  position: absolute;
+  bottom: 5px;
+  right: 8px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+
+/* ===========================
+   END OF FILE
+   =========================== */

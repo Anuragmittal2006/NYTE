@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <form id="username-form" action="/choose-username" method="POST">
+        
+        <input type="text" id="username" name="username" placeholder="Choose a username" required>
+        <small id="username-status"></small>
+        <br>
+        <button type="submit" id="submit-button" disabled>Submit</button>
+    </form>
+    
+    <script>
+        const usernameInput = document.getElementById('username');
+        const usernameStatus = document.getElementById('username-status');
+        const submitButton = document.getElementById('submit-button');
+    
+        // Listen to every keystroke in the username field
+        usernameInput.addEventListener('input', async () => {
+            const username = usernameInput.value;
+    
+            if (username.length < 3) {
+                usernameStatus.textContent = 'Username must be at least 3 characters long';
+                usernameStatus.style.color = 'red';
+                submitButton.disabled = true;
+                return;
+            }
+    
+            // Send request to server to check username availability
+            const response = await fetch(`/check-username?username=${username}`);
+            const result = await response.json();
+    
+            if (result.available) {
+                usernameStatus.textContent = 'Username is available';
+                usernameStatus.style.color = 'green';
+                submitButton.disabled = false;  // Enable submit button if available
+            } else {
+                usernameStatus.textContent = 'Username is taken';
+                usernameStatus.style.color = 'red';
+                submitButton.disabled = true;  // Disable submit button if username is taken
+            }
+        });
+    </script>
+    
+</body>
+</html>

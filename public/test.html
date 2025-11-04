@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+
+    <title>File Sharing</title>
+    <style>
+        #loader {
+            display: none;
+            margin: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        #fileDisplay {
+            margin-top: 20px;
+        }
+
+        .media-preview img, .media-preview video, .media-preview audio {
+            max-width: 300px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>File Sharing</h1>
+
+    <input type="file" id="fileInput" accept="image/*,video/*,audio/*" />
+    <button id="sendFileBtn">Send File</button>
+
+    <div id="loader">Uploading... 0 MB / 0 MB</div>
+    <div id="fileDisplay" class="media-preview"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        const fileInput = document.getElementById('fileInput');
+        const sendFileBtn = document.getElementById('sendFileBtn');
+        const loader = document.getElementById('loader');
+        const fileDisplay = document.getElementById('fileDisplay');
+
+        sendFileBtn.addEventListener('click', () => {
+            const file = fileInput.files[0];
+            if (file) {
+                const chunkSize = 1024 * 100; // 100 KB
+                const totalChunks = Math.ceil(file.size / chunkSize);
+                let currentChunk = 0;
+                let uploadedSize = 0;
+
+                loader.style.display = 'block';
+                updateLoader(0, file.size);
+
+                socket.emit('startFile', { fileName: file.name });
+
+                const sendChunk = (start) => {
+                    const chunk = file.slice(start, start + chunkSize);
+                    const reader = new FileReader();
+
+                    reader.onload = (event) => {
+                        socket.emit('sendFile', {
+                            chunk: event.target.result,
+                            isLastChunk: currentChunk === totalChunks - 1
+                        });
+
+                        currentChunk++;
+                        uploadedSize += chunk.size;
+                        updateLoader(uploadedSize, file.size);
+
+                        if (currentChunk < totalChunks) {
+                            sendChunk(currentChunk * chunkSize);
+                        } else {
+                            loader.textContent = 'Upload Complete!';
+                            setTimeout(() => { loader.style.display = 'none'; }, 2000);
+
+                            // Display uploaded file on the screen
+                            displayUploadedFile(file);
+                        }
+                    };
+
+                    reader.readAsArrayBuffer(chunk);
+                };
+
+                sendChunk(0);
+            }
+        });
+
+        function updateLoader(uploadedSize, totalSize) {
+            const uploadedMB = (uploadedSize / (1024 * 1024)).toFixed(2);
+            const totalMB = (totalSize / (1024 * 1024)).toFixed(2);
+            loader.textContent = `Uploading... ${uploadedMB} MB / ${totalMB} MB`;
+        }
+
+        function displayUploadedFile(file) {
+            let mediaElement = '';
+
+            if (file.type.startsWith('image')) {
+                mediaElement = `<img src="${URL.createObjectURL(file)}" alt="${file.name}" />`;
+            } else if (file.type.startsWith('video')) {
+                mediaElement = `
+                    <video controls>
+                        <source src="${URL.createObjectURL(file)}" type="${file.type}" />
+                    </video>
+                `;
+            } else if (file.type.startsWith('audio')) {
+                mediaElement = `
+                    <audio controls>
+                        <source src="${URL.createObjectURL(file)}" type="${file.type}" />
+                    </audio>
+                `;
+            }
+
+            fileDisplay.innerHTML = `
+                <h3>Uploaded File: ${file.name}</h3>
+                ${mediaElement}
+            `;
+        }
+
+        // Push notification subscription
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            navigator.serviceWorker.register('/sw.js').then(swReg => {
+                console.log('Service Worker Registered');
+
+                swReg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array('BG9RMF5x3JpBmJ-jDM1ga5doCOstXkWmRy7h5gD-5QcawNnXe30TgKBXeA45akLl65k0INajqWZjHOIEyOug0F0')
+                }).then(subscription => {
+                    socket.emit('subscribe', subscription);
+                });
+            });
+        }
+
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            return new Uint8Array([...rawData].map(char => char.charCodeAt(0)));
+        }
+    </script>
+</body>
+</html>

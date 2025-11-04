@@ -1,0 +1,176 @@
+<!-- userProfile.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Link to your CSS file -->
+</head>
+<body>
+    <div class="profile-container">
+        <img id="profilePic" src="" alt="Profile Picture" class="profile-picture">
+        <h2 id="profileName"></h2>
+        <p id="profileBio"></p>
+        <p id="profileDOB"></p>
+        <button id="sendFriendRequestBtn">Send Friend Request</button>
+    </div>
+
+    <script>// userProfile.js
+     // userProfile.js
+document.addEventListener('DOMContentLoaded', async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('id'); // Get the user ID from the URL
+
+    if (userId) {
+        const response = await fetch(`/api/getUserProfile?id=${userId}`);
+        const userData = await response.json();
+
+        if (response.ok) {
+            // Populate the profile details
+            document.getElementById('profilePic').src = userData.profilePhoto || 'default-profile.png';
+            document.getElementById('profileName').textContent = userData.name;
+            document.getElementById('profileBio').textContent = userData.bio || 'No bio available';
+            
+            // Format and display the date of birth
+            if (userData.dob) {
+                const dob = new Date(userData.dob); // Convert ISO string to Date object
+                const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                document.getElementById('profileDOB').textContent = `DOB: ${dob.toLocaleDateString('en-US', options)}`;
+            }
+        } else {
+            // Handle error
+            alert('User not found or error fetching data');
+        }
+    } else {
+        alert('Invalid user ID');
+    }
+
+    // Add event listener for the send friend request button
+    document.getElementById('sendFriendRequestBtn').onclick = () => {
+        // Handle sending friend request logic here
+        alert('Friend request sent!');
+    };
+});
+
+        </script> <!-- Link to your JS file -->
+</body>
+</html>
+
+<style>
+    /* Basic profile styling */
+    .profile-container {
+        text-align: center;
+        margin: 50px;
+    }
+    .profile-picture {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+    }
+</style>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// In routes.js
+app.get('/api/getFriendRequests', async (req, res) => {
+    const userId = req.user._id; // Assuming you have user session or authentication
+
+    try {
+        const user = await User.findById(userId).populate('receivedRequests.userId', 'name');
+        const requests = user.receivedRequests.filter(req => req.status === 'Pending');
+        const requestList = requests.map(req => ({
+            userId: req.userId._id,
+            name: req.userId.name
+        }));
+
+        res.json(requestList);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+
+// Accept Friend Request
+app.post('/api/acceptFriendRequest', async (req, res) => {
+    const { userId, requesterId } = req.body;
+
+    try {
+        const user = await User.findById(userId);
+        const requester = await User.findById(requesterId);
+
+        // Update request status to 'Accepted' for both users
+        const requestIndex = user.receivedRequests.findIndex(req => req.userId.equals(requesterId));
+        if (requestIndex > -1) {
+            user.receivedRequests[requestIndex].status = 'Accepted';
+            user.friends.push(requesterId);
+        }
+
+        const sentRequestIndex = requester.sentRequests.findIndex(req => req.userId.equals(userId));
+        if (sentRequestIndex > -1) {
+            requester.sentRequests[sentRequestIndex].status = 'Accepted';
+            requester.friends.push(userId);
+        }
+
+        await user.save();
+        await requester.save();
+
+        res.status(200).json({ message: 'Friend request accepted' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Decline Friend Request
+app.post('/api/declineFriendRequest', async (req, res) => {
+    const { userId, requesterId } = req.body;
+
+    try {
+        const user = await User.findById(userId);
+        const requester = await User.findById(requesterId);
+
+        // Update request status to 'Declined' for both users
+        const requestIndex = user.receivedRequests.findIndex(req => req.userId.equals(requesterId));
+        if (requestIndex > -1) {
+            user.receivedRequests[requestIndex].status = 'Declined';
+        }
+
+        const sentRequestIndex = requester.sentRequests.findIndex(req => req.userId.equals(userId));
+        if (sentRequestIndex > -1) {
+            requester.sentRequests[sentRequestIndex].status = 'Declined';
+        }
+
+        await user.save();
+        await requester.save();
+
+        res.status(200).json({ message: 'Friend request declined' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Splash Screen</title>
+    <link rel="stylesheet" href="/styles.css"> <!-- Custom CSS file -->
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: white; /* Background color */
+            overflow: hidden; /* Prevent scroll during splash */
+        }
+        #splash {
+            text-align: center;
+            opacity: 0; /* Initially hidden */
+            transition: opacity 1s ease; /* Fade-in effect */
+        }
+        /* Add animation for fade-out */
+        .fade-out {
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+        .fade-in {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div id="splash" class="fade-in">
+        <img src="/logo.png" alt="Logo" style="width: 200px;"> <!-- Make sure this path is correct -->
+        <h1>Welcome to Our App</h1>
+    </div>
+
+    <script>
+        // Splash screen ko dikhane aur fade out karne ke liye
+        window.onload = () => {
+            const splash = document.getElementById('splash');
+            setTimeout(() => {
+                splash.classList.add('fade-out'); // Start fade-out effect
+                setTimeout(() => {
+                    window.location.href = '/index'; // Home page ya main page ki URL
+                }, 1000); // Redirect after fade-out duration
+            }, 3000); // Show splash for 3 seconds
+        };
+    </script>
+</body>
+</html>

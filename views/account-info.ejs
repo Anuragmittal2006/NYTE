@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="db.js"></script>
+    <script src="settings.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>your Account</title>
+    <style>
+       body {
+    font-family: 'Arial', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    padding: 20px;
+}
+#friendsTab {
+        cursor: pointer;
+        font-size: 16px;
+        margin: 10px;
+    }
+    
+    #friendsListPage {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #f0f0f0;
+        overflow-y: scroll;
+        padding: 20px;
+    }
+    
+    #friendsList li {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+        cursor: pointer;
+    }
+    
+    #friendsList img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+    </style>
+</head>
+<body>
+    <h1>chatApp</h1>
+
+    
+    
+    <% if (typeof user !== 'undefined' && user) { %> <!-- Check if user exists -->
+        <p>Welcome, <strong><%= user.name || 'Unknown User' %></strong>!</p> <!-- Fallback if name is missing -->
+        <p>Your email: <%= user.email || 'No email available' %></p> <!-- Fallback if email is missing -->
+        <p>Your subscription status: <strong><%= user.subscription || 'No subscription information' %></strong></p>
+        <p>Your login method is: <strong><%= user.authType || 'Unknown' %></strong></p>
+
+        <!-- Profile Completion Form -->
+        <h2>Edit Your Profile</h2>
+        <form action="/update-profile" method="POST" enctype="multipart/form-data">
+            <!-- Name -->
+            <div>
+                <label for="name">Name:</label>
+                <span><%= user.name || 'Not provided' %></span>
+                <button type="button" onclick="toggleEdit('name')">Edit</button>
+                <input type="text" id="name" name="name" value="<%= user.name %>" style="display:none;">
+            </div>
+
+            <div id="friendsTab">
+                <span id="friendsCount">0 Friends</span>
+            </div>
+            
+            <!-- Friends List Page Modal (hidden initially) -->
+            <div id="friendsListPage" style="display: none;">
+                <h2>Your Friends</h2>
+                <ul id="friendsList"></ul>
+            </div>
+            
+
+            <!-- Date of Birth -->
+            <div>
+                <label for="dob">Date of Birth:</label>
+                <span><%= user.dob ? user.dob.toDateString() : 'Not provided' %></span>
+                <button type="button" onclick="toggleEdit('dob')">Edit</button>
+                <input type="date" id="dob" name="dob" value="<%= user.dob ? user.dob.toISOString().split('T')[0] : '' %>" style="display:none;">
+                <label for="bio">Bio:</label>
+                <textarea name="bio"><%= user.bio || '' %></textarea>
+            </div>
+
+            <!-- Profile Photo -->
+            <div>
+                <label for="profilePhoto">Profile Photo:</label>
+                <img src="<%= user.profilePhoto || '/default-avatar.png' %>" alt="Profile Photo" style="width:100px; height:100px;">
+                <button type="button" onclick="toggleEdit('profilePhoto')">Edit</button>
+                <input type="file" id="profilePhoto" name="profilePhoto" style="display:none;">
+            </div>
+
+            <!-- Save Button -->
+            <button type="submit">Save Changes</button>
+        </form>
+
+        <!-- Pay button logic -->
+        <% if (user.subscription === 'free') { %>
+          <a href="/premium">Get Premium</a>
+      
+        <% } else { %>
+            <p>Your subscription is Basic, if you want to update your plan further please <a href="/premium">Get more Premium plan</p>
+        <% } %>
+    <% } else { %>
+        <p>No user information available.</p> <!-- Display message if user is not logged in -->
+    <% } %>
+
+    <a href="/logout">Logout</a>
+
+    <button onclick="finalConfirm()">Delete Account</button>
+<div class="account-section">
+  <h2>🎁 Gifts you gave</h2>
+
+  <% if (gifts && gifts.length) { %>
+    <div class="gifts-list">
+      <% gifts.forEach(function(gift) { %>
+        <div class="gift-box" style="margin-bottom:12px;padding:12px;border:1px solid #e6e6e6;border-radius:8px;">
+          
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+            <div style="display:flex;gap:12px;align-items:center">
+              <div style="font-size:24px">💖</div>
+              <div>
+                <div style="font-weight:700">For: <%= gift.partnerEmail || '—' %></div>
+                <div class="small" style="color:#666;font-size:13px;">
+                  Given on: <%= new Date(gift.createdAt).toLocaleString() %>
+                  <% if (gift.expiresAt) { %>
+                    • Expires: <%= new Date(gift.expiresAt).toLocaleString() %>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+
+            <% const statusColor = (gift.status === 'expired' ? '#d9534f' : '#28a745'); %>
+            <div style="text-align:right">
+            
+            </div>
+          </div>
+
+          <div class="link-row" style="margin-top:12px;display:flex;gap:8px;align-items:center;">
+            <button onclick="window.open('<%= gift.link %>', '_blank')" 
+        style="flex:1;padding:8px;border:1px solid #ddd;border-radius:4px;cursor:pointer;background:#f5f5f5;">
+  Open Gift
+</button>
+
+            <button class="btn" onclick="copyLink('<%= gift.token %>')">Copy</button>
+
+            <a class="btn btn-outline" target="_blank"
+               href="https://mail.google.com/mail/?view=cm&fs=1
+               &to=<%= encodeURIComponent(gift.partnerEmail) %>
+               &su=<%= encodeURIComponent('You\'ve received a Lovechat gift!') %>
+               &body=<%= encodeURIComponent('Hey! I\'ve bought you Lovechat premium. Claim it here: ' + gift.link) %>">
+               Send via Gmail
+            </a>
+
+            <a class="btn btn-outline" target="_blank"
+               href="https://wa.me/?text=<%= encodeURIComponent('Hey! I\'ve bought you Lovechat premium 💙 Claim it here: ' + gift.link) %>">
+               Share on WhatsApp
+            </a>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <div class="gift-box empty" style="padding:12px;border:1px dashed #ddd;border-radius:8px;">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="font-size:28px">🎁</div>
+        <div>
+          <div style="font-weight:700">You haven't gifted anyone yet</div>
+          <div class="small">Surprise your partner with Lovechat premium today 💙</div>
+        </div>
+      </div>
+      <div style="margin-top:12px">
+        <a href="/gifts" class="btn">Give a Gift</a>
+      </div>
+    </div>
+  <% } %>
+</div>
+
+<script>
+async function copyLink(token) {
+  const input = document.getElementById('giftLink_' + token);
+  if (!input) return alert('Link not found');
+
+  const link = input.value;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(link);
+      showToast('Gift link copied to clipboard!');
+    } catch (err) {
+      fallbackCopy(input);
+    }
+  } else {
+    fallbackCopy(input);
+  }
+
+  function fallbackCopy(el) {
+    el.select();
+    try {
+      document.execCommand('copy');
+      showToast('Gift link copied to clipboard!');
+    } catch (e) {
+      alert('Unable to copy automatically. Please select and copy manually.');
+    }
+  }
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.position = 'fixed';
+  t.style.right = '20px';
+  t.style.bottom = '20px';
+  t.style.background = 'rgba(0,0,0,0.8)';
+  t.style.color = '#fff';
+  t.style.padding = '10px 14px';
+  t.style.borderRadius = '6px';
+  t.style.zIndex = 9999;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2000);
+}
+</script>
+
+    <!-- JavaScript to toggle edit inputs -->
+    <script>
+        function toggleEdit(field) {
+            const input = document.getElementById(field);
+            input.style.display = input.style.display === 'none' ? 'block' : 'none';
+        }
+
+
+        function confirmAccountDeletion() {
+            const confirmation = confirm("Are you sure you want to delete your account? This action cannot be undone. All your data will be lost.");
+            if (confirmation) {
+                const downloadOption = confirm("Would you like to download your data before deletion?");
+                if (downloadOption) {
+                    // Redirect to data download endpoint or handle download
+                    window.location.href = '/download-data'; // Implement this route
+                } else {
+                    finalConfirm();
+                }
+            }
+        }
+
+        function finalConfirm() {
+            const finalConfirmation = confirm("This is your final confirmation. Are you sure you want to delete your account?");
+            if (finalConfirmation) {
+                // Proceed with account deletion
+                window.location.href = '/delete-account'; // Implement this route
+            }
+        }
+    </script>
+
+<script>
+// Function to fetch and display friends count and list
+async function loadFriends() {
+    try {
+        const response = await fetch('/api/getFriends');
+        if (response.ok) {
+            const { friends } = await response.json();
+            const friendsCount = friends.length;
+
+            // Update friends count on the Friends Tab
+            document.getElementById('friendsCount').textContent = `${friendsCount} Friends`;
+
+            // Populate friends list
+            const friendsListElement = document.getElementById('friendsList');
+            friendsListElement.innerHTML = ''; // Clear existing list
+            friends.forEach(friend => {
+                const friendItem = document.createElement('li');
+                friendItem.innerHTML = `
+                    <img src="${friend.profilePhoto || 'default-profile.jpg'}" alt="${friend.name}">
+                    <span>${friend.name}</span>
+                `;
+                friendItem.onclick = () => openUserProfile(friend._id);
+                friendsListElement.appendChild(friendItem);
+            });
+        }
+    } catch (error) {
+        console.error("Error loading friends:", error);
+    }
+}
+
+// Event listener for Friends Tab click
+document.getElementById('friendsTab').onclick = () => {
+    // Show the friends list page
+    document.getElementById('friendsListPage').style.display = 'block';
+    loadFriends();
+};
+
+// Function to open a friend's profile
+function openUserProfile(friendId) {
+    // Navigate to the profile page
+    window.location.href = `/userProfile?id=${friendId}`;
+}
+
+// Hide friends list page when clicking outside (optional)
+document.getElementById('friendsListPage').onclick = (e) => {
+    if (e.target.id === 'friendsListPage') {
+        document.getElementById('friendsListPage').style.display = 'none';
+    }
+};
+
+
+</script>
+
+</body>
+</html>

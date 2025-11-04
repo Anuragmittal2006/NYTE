@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Upload to Google Cloud Storage</title>
+</head>
+<body>
+    <h2>Upload File</h2>
+    <input type="file" id="fileInput">
+    <button onclick="uploadFile()">Upload</button>
+    
+    <h2>Download File</h2>
+    <input type="text" id="fileName" placeholder="Enter file name">
+    <button onclick="downloadFile()">Download</button>
+
+    <h2>Delete File</h2>
+    <button onclick="deleteFile()">Delete</button>
+
+    <script>
+        async function uploadFile() {
+            const file = document.getElementById("fileInput").files[0];
+            let formData = new FormData();
+            formData.append("file", file);
+
+            let res = await fetch("/upload", { method: "POST", body: formData });
+            let data = await res.json();
+            alert("Uploaded: " + data.fileName);
+        }
+
+        async function downloadFile() {
+            const fileName = document.getElementById("fileName").value;
+            let res = await fetch(`/download/${fileName}`);
+            let data = await res.json();
+            window.open(data.url, "_blank");
+        }
+
+        async function deleteFile() {
+            const fileName = document.getElementById("fileName").value;
+            await fetch(`/delete/${fileName}`, { method: "DELETE" });
+            alert("File deleted.");
+        }
+    </script>
+</body>
+</html>

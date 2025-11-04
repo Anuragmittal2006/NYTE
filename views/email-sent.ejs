@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verification Email Sent</title>
+    <script>
+        // Polling function to check verification status every 5 seconds
+        function pollVerificationStatus(email) {
+            const intervalId = setInterval(() => {
+                fetch(`/check-verification-status?email=${email}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.isVerified) {
+                            clearInterval(intervalId);
+                            
+                             // Stop polling when verified
+                            window.location.href = `/choose-username?email=${email}`; // Redirect to choose-username page
+                            
+                        }
+                    })
+                    .catch(error => console.error("Error checking verification status:", error));
+            }, 5000); // Check every 5 seconds
+        }
+
+        // Call the function with user's email after the page loads
+        document.addEventListener("DOMContentLoaded", function() {
+            const userEmail = "<%= userEmail %>"; // Pass the user's email from server
+            pollVerificationStatus(userEmail);
+        });
+    </script>
+</head>
+<body>
+    <div style="text-align: center; margin-top: 50px; display: flex;">
+        <h2>Verification email sent!</h2>
+        <p>Please check your email to verify your account.</p>
+        
+        <!-- Button to open Gmail -->
+        <button onclick="window.open('https://mail.google.com/', '_blank')">Open Gmail</button>
+    </div>
+</body>
+</html>

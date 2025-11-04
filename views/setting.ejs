@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <script src="db.js"></script>
+    <script src="settings.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>setting</title>
+    <style>
+        /* Default Light Mode */
+        :root {
+            --bg-color: white;
+            --text-color: black;
+            --dropdown-bg: #f1f1f1;
+            --dropdown-hover: #ddd;
+            --button-bg: #4CAF50;
+            --button-hover: #3e8e41;
+        }
+
+        /* Dark Mode */
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --text-color: white;
+            --dropdown-bg: #333;
+            --dropdown-hover: #444;
+            --button-bg: #555;
+            --button-hover: #777;
+        }
+
+        /* Auto System Theme */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #121212;
+                --text-color: white;
+                --dropdown-bg: #333;
+                --dropdown-hover: #444;
+                --button-bg: #555;
+                --button-hover: #777;
+            }
+        }
+
+        /* Apply Theme */
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: Arial, sans-serif;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* Dropdown Styles */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropbtn {
+            background-color: var(--button-bg);
+            color: white;
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: var(--dropdown-bg);
+            min-width: 160px;
+            box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+        }
+
+        .dropdown-content a {
+            color: var(--text-color);
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background 0.3s;
+        }
+
+        .dropdown-content a:hover {
+            background-color: var(--dropdown-hover);
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown:hover .dropbtn {
+            background-color: var(--button-hover);
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            margin-top: 20px;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            background-color: var(--button-bg);
+            color: white;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--button-hover);
+        }
+    </style>
+    
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script type="module" src="/views/JS/socketListeners.js"></script>
+
+</head>
+
+<body>
+    <div class="dropdown">
+        <button class="dropbtn">Theme</button>
+        <div class="dropdown-content">
+            <a href="#" onclick="setTheme('system')">System Default</a>
+            <a href="#" onclick="setTheme('light')">Light Mode</a>
+            <a href="#" onclick="setTheme('dark')">Dark Mode</a>
+        </div>
+    </div>
+    <form id="partnerForm">
+        <label for="partnerIdentifier">Add your partner (username or email):</label>
+        <input type="text" id="partnerIdentifier" required>
+        <button type="submit">Send Request</button>
+      </form>
+      <div id="partnerStatus"></div>
+      
+      <label for="disintegrate-permission">Who can Disintegrate you?</label>
+      <select id="disintegrate-permission">
+        <option value="partner-only">Only my partner</option>
+        <option value="no-one">No one</option>
+        <option value="everyone">Anyone</option>
+      </select>
+      <button onclick="saveDisintegrateSetting()">Save</button>
+       <script src="/socket.io/socket.io.js"></script>
+<script>   const userId = '<%= user._id %>';
+const socket = io();
+ socket.emit('joinRoom', { userId, roomId: userId });
+document.getElementById("partnerForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const partnerInput = document.getElementById("partnerIdentifier").value;
+    const res = await fetch("/api/partner/request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ partnerInput })
+    });
+  
+    const data = await res.json();
+    document.getElementById("partnerStatus").textContent = data.message;
+  }); 
+  
+  function saveDisintegrateSetting() {
+  const value = document.getElementById("disintegrate-permission").value;
+  fetch("/api/settings/disintegrate-permission", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ value }),
+  });
+}
+</script>
+</body>
+
+</html>

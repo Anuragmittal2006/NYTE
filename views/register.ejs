@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f0f0; }
+        .container { width: 300px; text-align: center; }
+        #strengthMessage { margin-top: 10px; font-size: 0.9em; }
+        .strength-bar { height: 10px; width: 100%; background-color: #e0e0e0; border-radius: 5px; overflow: hidden; margin-top: 5px; }
+        .strength-bar-fill { height: 100%; width: 0%; transition: width 0.3s; }
+        .strength-weak { background-color: red; }
+        .strength-medium { background-color: orange; }
+        .strength-strong { background-color: green; }
+        .error { color: red; margin-top: 10px; font-size: 0.9em; }
+        .criteria { font-size: 0.8em; text-align: left; margin-top: 5px; }
+        .criteria-list { list-style-type: none; padding: 0; }
+        .criteria-item { color: red; }
+        .criteria-item.valid { color: green; }
+    </style>
+</head>
+
+<body>
+    <h2>Register</h2>
+    <form action="/register" method="POST">
+        <% if (typeof errorMessage !=='undefined' ) { %>
+            <div class="error-message" style="color: red;">
+                <%= errorMessage %>
+            </div>
+            <% } %>
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" placeholder="Enter Your Email" required>
+                <br><br>
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" placeholder="Enter Your Password" required>
+                <br>
+                   
+            <div id="strengthMessage">Password strength: </div>
+            <div class="strength-bar">
+                <div id="strengthBarFill" class="strength-bar-fill"></div>
+            </div>
+            
+            <div class="criteria">
+                <ul class="criteria-list">
+                    <li id="lengthCriteria" class="criteria-item">At least 8 characters</li>
+                    <li id="numberCriteria" class="criteria-item">At least 1 number</li>
+                    <li id="specialCharCriteria" class="criteria-item">At least 1 special character</li>
+                    <li id="upperLowerCriteria" class="criteria-item">At least 1 uppercase and 1 lowercase letter</li>
+                </ul>
+            </div>
+            
+            <div id="errorMessage" class="error"></div>
+            <br>
+          
+                <div class="g-recaptcha" data-sitekey="6LfElHAqAAAAAOZNTDqW_Bl6LZKSZ3p8VNSMRU60"></div>
+                <span id="captchaError" style="color: red; display: none;">Please fill the CAPTCHA.</span> 
+                <br><br>
+                <button type="submit" id="submitBtn" disabled>Register</button><br>
+
+                
+
+
+    </form>
+    <a href="/auth/google"><button>signup with google</button></a>
+    <a href="/auth/facebook">
+        <button>signup with Facebook</button>
+    </a>
+    <p>Already have an account? <a href="/login">Login here</a></p>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <script type="module">// Client-side JavaScript
+        async function checkLoginStatus() {
+            const response = await fetch('/protected', { method: 'GET', credentials: 'include' });
+            if (response.ok) {
+                // User is logged in
+                window.location.href = '/protected'; // Redirect to protected page
+            } else { console.error('acceess denied:', response.status) }
+        }
+
+        checkLoginStatus();
+    </script>
+    <script>
+        function validateCaptcha() {
+            var captchaResponse = grecaptcha.getResponse();
+            if (captchaResponse.length === 0) {
+                document.getElementById("captchaError").style.display = "block";
+                return false;
+            }
+            return true;
+        }
+    </script>
+
+<script>
+    const passwordInput = document.getElementById("password");
+    const strengthMessage = document.getElementById("strengthMessage");
+    const strengthBarFill = document.getElementById("strengthBarFill");
+    const errorMessage = document.getElementById("errorMessage");
+    const registerForm = document.getElementById("registerForm");
+    const submitBtn = document.getElementById("submitBtn");
+
+    // Password strength checker
+    passwordInput.addEventListener("input", function () {
+        const password = passwordInput.value;
+        let strength = 0;
+
+        // Criteria for password strength
+        const isLongEnough = password.length >= 8;
+        const hasNumber = /\d/.test(password);
+        const hasSpecialChar = /[^A-Za-z0-9]/.test(password);
+        const hasUpperLower = /[A-Z]/.test(password) && /[a-z]/.test(password);
+
+        // Update the criteria feedback
+        document.getElementById("lengthCriteria").className = isLongEnough ? "criteria-item valid" : "criteria-item";
+        document.getElementById("numberCriteria").className = hasNumber ? "criteria-item valid" : "criteria-item";
+        document.getElementById("specialCharCriteria").className = hasSpecialChar ? "criteria-item valid" : "criteria-item";
+        document.getElementById("upperLowerCriteria").className = hasUpperLower ? "criteria-item valid" : "criteria-item";
+
+        // Update strength level
+        if (isLongEnough) strength++;
+        if (hasNumber) strength++;
+        if (hasSpecialChar) strength++;
+        if (hasUpperLower) strength++;
+
+        // Update the strength bar and message
+        strengthBarFill.style.width = `${strength * 25}%`;
+
+        if (strength === 1) {
+            strengthBarFill.className = "strength-bar-fill strength-weak";
+            strengthMessage.textContent = "Password strength: Weak";
+        } else if (strength === 2) {
+            strengthBarFill.className = "strength-bar-fill strength-medium";
+            strengthMessage.textContent = "Password strength: Medium";
+        } else if (strength === 3) {
+            strengthBarFill.className = "strength-bar-fill strength-strong";
+            strengthMessage.textContent = "Password strength: Strong";
+        } else if (strength === 4) {
+            strengthBarFill.className = "strength-bar-fill strength-strong";
+            strengthMessage.textContent = "Password strength: Very Strong";
+        } else {
+            strengthBarFill.className = "strength-bar-fill";
+            strengthMessage.textContent = "Password strength: ";
+        }
+
+        // Enable or disable the submit button based on password criteria
+        if (isLongEnough && hasNumber && hasSpecialChar && hasUpperLower) {
+            submitBtn.disabled = false;
+            errorMessage.textContent = ""; // Clear error message
+        } else {
+            submitBtn.disabled = true;
+        }
+    });
+
+    // Validation on form submit
+    registerForm.addEventListener("submit", function (e) {
+        const password = passwordInput.value;
+
+        // Check if password meets required criteria
+        const hasNumber = /\d/.test(password);
+        const hasSpecialChar = /[^A-Za-z0-9]/.test(password);
+        const hasUpperLower = /[A-Z]/.test(password) && /[a-z]/.test(password);
+        const isLongEnough = password.length >= 8;
+
+        if (!hasNumber || !hasSpecialChar || !hasUpperLower || !isLongEnough) {
+            e.preventDefault(); // Prevent form submission
+            errorMessage.textContent = "Please meet the password criteria before submitting.";
+            passwordInput.focus();
+        } else {
+            errorMessage.textContent = ""; // Clear error message if all conditions are met
+        }
+    });
+</script>
+    
+</body>
+
+</html>

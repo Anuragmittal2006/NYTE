@@ -1,0 +1,713 @@
+<html lang="en">
+
+<head>
+    <script src="db.js"></script>
+    <script src="settings.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>chat-interface</title>
+    <style>
+        /* Basic styling for the chat interface */
+        /* General Reset */
+        
+        :root {
+    --background-color: #e0f7fa;
+    --text-color: #880505;
+    --header-bg: #247dd0;
+    --header-text: white;
+    --sent-msg-bg: #c8e6c9;
+    --received-msg-bg: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background-color: #121212;
+        --text-color: #ffffff;
+        --header-bg: #1e1e1e;
+        --header-text: #ffffff;
+        --sent-msg-bg: #263238;
+        --received-msg-bg: #37474f;
+    }
+}
+* {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+    font-family: 'Arial', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    padding: 20px;
+}
+
+/* Dropdown styling */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropbtn {
+    background-color: var(--header-bg);
+    color: var(--header-text);
+    padding: 12px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.dropbtn:hover {
+    background-color: var(--sent-msg-bg); /* A little darker on hover */
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: var(--background-color);
+    min-width: 160px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    z-index: 1;
+}
+
+.dropdown-content a {
+    color: var(--text-color);
+    padding: 10px 15px;
+    text-decoration: none;
+    display: block;
+    transition: background 0.3s;
+}
+
+.dropdown-content a:hover {
+    background-color: var(--sent-msg-bg);
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+
+        /* Search bar */
+        .search-friends {
+             /* Keeps it always visible */
+    top: 10px;
+    width: 100%;
+    background-color: white; /* Match background with rest of UI */
+    z-index: 1000;
+    padding: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Chat list */
+        #chatList {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        li {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+
+        li:hover {
+            transform: scale(1.02);
+            background-color: #f1f9ff;
+        }
+
+        li img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        li span {
+            flex: 1;
+            font-size: 14px;
+            color: #333;
+        }
+
+        /* Buttons for friend requests */
+        li button {
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        li button:first-child {
+            background-color: #28a745;
+            color: white;
+            border: none;
+        }
+
+        li button:first-child:hover {
+            background-color: #218838;
+        }
+
+        li button:last-child {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+        }
+
+        li button:last-child:hover {
+            background-color: #c82333;
+        }
+        .hidden {
+    display: none;
+}
+/* For smooth transition */
+.dashboard-content, .search-results {
+    transition: transform 0.6s ease, opacity 0.6s ease;
+    opacity: 1;
+    transform: translateY(0); /* Default position */
+}
+
+/* Hidden state with slide-down effect */
+.dashboard-content.hidden {
+    opacity: 0;
+    transform: translateY(-100%); /* Move out of view (upwards) */
+}
+
+/* Search results default hidden state */
+.search-results {
+    opacity: 0;
+    transform: translateY(100%); /* Start below the screen */
+    display: block; /* Ensure it occupies space */
+}
+
+/* Visible state for search results with slide-up effect */
+.search-results.show {
+    opacity: 1;
+    transform: translateY(0); /* Bring into view */
+}
+
+.search-results {
+    box-shadow: 0 -10px 15px rgba(0, 0, 0, 0.1); /* Slight shadow for prda effect */
+}
+
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script type="module" src="/views/JS/socketListeners.js"></script>
+
+</head>
+
+<body>
+
+
+    <div class="dropdown">
+        <button class="dropbtn">Menu</button>
+        <div class="dropdown-content">
+            <a href="/account-info">Your Account</a>
+            <a href="setting">setting</a>
+            <a href="/logout">logout</a>
+              <a href="/premium">Get Premium</a>
+        </div>
+    </div>
+    <div class="search-friends">
+        <input type="text" id="searchInput" placeholder="Search for friends...">
+        <button id="searchBtn">Search</button>
+    </div>
+    <div class="dashboard-content">
+        
+        
+        <ul id="chatList">
+            <!-- Chatrooms will be displayed here -->
+        </ul>
+    </div>
+
+
+    <div class="search-results hidden">
+        <ul id="friendRequestsList"></ul>
+        <button id="moreBtn" style="display: none;">More</button>
+    </div>
+
+    <script>// script.js
+        document.addEventListener('DOMContentLoaded', async () => {
+         
+            const searchInput = document.getElementById('searchInput');
+const dashboardContent = document.querySelector('.dashboard-content');
+const searchResults = document.querySelector('.search-results');
+
+// Show search results and hide dashboard when input is focused
+searchInput.addEventListener('focus', () => {
+    dashboardContent.classList.add('hidden');
+    searchResults.classList.add('show');
+});
+
+// Toggle back to dashboard if input is empty
+searchInput.addEventListener('input', () => {
+    if (searchInput.value.trim() === '') {
+        dashboardContent.classList.remove('hidden');
+        searchResults.classList.remove('show');
+    } else {
+        dashboardContent.classList.add('hidden');
+        searchResults.classList.add('show');
+    }
+});
+
+// Optional: Ensure behavior is consistent on blur
+searchInput.addEventListener('blur', () => {
+    if (searchInput.value.trim() === '') {
+        dashboardContent.classList.remove('hidden');
+        searchResults.classList.remove('show');
+    }
+});
+
+
+
+           
+            const friendRequestsList = document.getElementById('friendRequestsList');
+            const moreBtn = document.getElementById('moreBtn');
+            let page = 1;
+            let query = '';
+            // Debounce function to delay execution
+            function debounce(func, delay) {
+                let timer;
+                return function (...args) {
+                    clearTimeout(timer);
+                    timer = setTimeout(() => func.apply(this, args), delay);
+                };
+            }
+
+            // Function to search for users
+            async function searchUsers(initialLoad = false) {
+                if (initialLoad) {
+                    friendRequestsList.innerHTML = ''; // Clear previous search results
+                    page = 1; // Reset to first page
+                }
+                const query = searchInput.value.trim();
+                if (!query) {
+                    friendRequestsList.innerHTML = '';
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/searchUsers?username=${query}&page=${page}`);
+                    const data = await response.json();
+
+                    friendRequestsList.innerHTML = ''; // Clear previous search results
+
+                    if (Array.isArray(data) && data.length > 0) {
+                        data.slice(0, 5).forEach(user => {
+                            const li = document.createElement('li');
+                            // Create image element for profile photo
+                            const img = document.createElement('img');
+                            img.src = user.profilePhoto || 'default-profle.png';//ck image if no profile photo
+                            img.style.width = '40px';
+                            img.style.height = '40px';
+                            img.style.borderRadius = '50%';
+                            img.style.marginRight = '10px';
+
+                            // Add name next to image
+                            const nameText = document.createTextNode(user.name);
+
+                            // Append image and name to list item
+                            li.appendChild(img);
+                            li.appendChild(nameText);
+                            // Frontend: Trigger when clicking on a user
+                            li.onclick = async function () {
+                                const userId = user._id; // The user ID to be passed
+
+                                // Make an API call to encrypt the user ID
+                                const response = await fetch(`/api/encryptUserId?userId=${userId}`);
+                                const data = await response.json();
+
+                                // Redirect with encrypted userId in the URL
+                                if (data.encryptedUserId) {
+                                    window.location.href = `/userProfile/${data.encryptedUserId}`; // Redirect with encrypted userId
+                                } else {
+                                    console.error('Error encrypting user ID');
+                                }
+                            };
+                            friendRequestsList.appendChild(li);
+                        });
+                        // Show "More" button only if data returned
+                        moreBtn.style.display = 'block';
+                    } else if (data && data.message) {
+                        // Show "No users found" message if no users exist
+                        const li = document.createElement('li');
+                        li.textContent = data.message;
+                        li.style.color = "gray";
+                        friendRequestsList.appendChild(li);
+                        moreBtn.style.display = 'none';
+                    }
+                } catch (error) {
+                    console.error("Error fetching search results:", error);
+                }
+            }
+
+            // "More" button click handler
+            moreBtn.onclick = () => {
+                page += 1; // Increment page
+                searchUsers();
+            };
+
+
+            // Apply debounce to searchUsers function
+            const debouncedSearch = debounce(searchUsers, 300);
+
+
+            // Trigger search on input event
+            searchInput.addEventListener('input', debouncedSearch);
+
+
+
+
+
+
+            function fetchChatrooms() {
+                const transaction = db.transaction("rooms", "readonly");
+                const store = transaction.objectStore("rooms");
+
+                const chatrooms = [];
+
+                return new Promise((resolve, reject) => {
+                    const request = store.openCursor();
+
+                    request.onsuccess = (event) => {
+                        const cursor = event.target.result;
+                        if (cursor) {
+                            chatrooms.push(cursor.value); // Fetch roomId directly from "rooms" store
+                            cursor.continue();
+                        } else {
+                            resolve(chatrooms);
+                        }
+                    };
+
+                    request.onerror = () => reject("Error fetching chatrooms.");
+                });
+            }
+
+
+            // Display all chatrooms on the dashboard
+            async function displayChatrooms() {
+    const chatListElement = document.getElementById('chatList');
+    const chatrooms = await fetchChatrooms();
+
+    for (const chat of chatrooms) {
+        const chatElement = document.createElement('li');
+        chatElement.setAttribute('data-room-id', chat.roomId);
+        chatElement.style.display = 'flex';
+        chatElement.style.alignItems = 'center';
+        chatElement.style.padding = '10px';
+        chatElement.style.cursor = 'pointer';
+        chatElement.style.flexDirection = 'column';
+        chatElement.style.alignItems = 'flex-start';
+
+        const img = document.createElement('img');
+        img.src = chat.receiverProfilePhoto || 'default-profile.png';
+        img.alt = `${chat.receiverName}'s profile photo`;
+        img.style.width = '40px';
+        img.style.height = '40px';
+        img.style.borderRadius = '50%';
+        img.style.marginRight = '10px';
+
+        const nameText = document.createElement('div');
+        nameText.textContent = chat.receiverName;
+        nameText.style.fontWeight = 'bold';
+
+      const lastMsgText = document.createElement('div');
+      lastMsgText.classList.add('last-msg');
+      lastMsgText.textContent = '...'; // default
+      lastMsgText.style.fontSize = '12px';
+      lastMsgText.style.color = 'gray';
+      lastMsgText.style.marginTop = '3px';
+
+      // 👇 Add truncation styles
+      lastMsgText.style.whiteSpace = 'nowrap';
+      lastMsgText.style.overflow = 'hidden';
+      lastMsgText.style.textOverflow = 'ellipsis';
+
+        const horizontalWrapper = document.createElement('div');
+        horizontalWrapper.style.display = 'flex';
+        horizontalWrapper.style.alignItems = 'center';
+        horizontalWrapper.appendChild(img);
+
+        const verticalWrapper = document.createElement('div');
+        verticalWrapper.style.display = 'flex';
+        verticalWrapper.style.flexDirection = 'column';
+        verticalWrapper.style.marginLeft = '10px';
+        verticalWrapper.appendChild(nameText);
+        verticalWrapper.appendChild(lastMsgText);
+
+        horizontalWrapper.appendChild(verticalWrapper);
+        chatElement.appendChild(horizontalWrapper);
+
+        chatElement.onclick = () => {
+            window.location.href = `/chat?roomId=${chat.roomId}`;
+        };
+
+        chatListElement.appendChild(chatElement);
+
+        // 👇 Fetch and update latest message
+        const lastMsg = await getLastMessage(chat.roomId);
+        if (lastMsg) {
+         lastMsgText.textContent = lastMsg.messageText || '[Media]';
+     } else {
+            lastMsgText.textContent = 'No messages yet';
+        }
+    }
+}
+
+
+            function getLastMessage(roomId) {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction("messages", "readonly");
+        const store = transaction.objectStore("messages");
+        const index = store.index("roomId");
+        const request = index.openCursor(IDBKeyRange.only(roomId), 'prev'); // 'prev' = latest first
+
+        request.onsuccess = (event) => {
+            const cursor = event.target.result;
+            if (cursor) {
+                resolve(cursor.value); // First message = latest
+            } else {
+                resolve(null); // No message
+            }
+        };
+
+        request.onerror = (event) => {
+            reject(event.target.error);
+        };
+    });
+}
+
+const email = '<%= user.email %>';
+initDB(() => {
+       displayChatrooms();
+    });  
+         
+// Sample user data
+const userData = {
+    email: '<%= user.email %>',
+    name: '<%= user.name %>',
+    
+};
+function addUser(userData) {
+    const transaction = db.transaction("users", "readwrite");
+    const userStore = transaction.objectStore("users");
+
+    const user = {
+          email: userData.email,
+        name: userData.name,
+        privateKey: userData.privateKey,
+    };
+
+    userStore.add(user);
+
+    transaction.oncomplete = () => {
+        console.log("User added successfully!");
+    };
+    
+    transaction.onerror = (event) => {
+        console.error("Error adding user:", event.target.error);
+    };
+}
+
+            
+
+        });
+
+
+
+
+        // Fetch and display friend requests
+        async function fetchFriendRequests() {
+            try {
+                const response = await fetch('/api/getFriendRequests');
+                const requests = await response.json();
+
+                // Clear any existing list items
+                friendRequestsList.innerHTML = '';
+
+                requests.forEach(request => {
+                    const li = document.createElement('li');
+                    li.style.display = 'flex';
+                    li.style.alignItems = 'center';
+
+                    // Profile photo
+                    const img = document.createElement('img');
+                    img.src = request.profilePhoto;
+                    img.alt = `${request.name}'s profile photo`;
+                    img.style.width = '40px';
+                    img.style.height = '40px';
+                    img.style.borderRadius = '50%';
+                    img.style.marginRight = '10px';
+
+                    // User name
+                    const nameText = document.createElement('span');
+                    nameText.textContent = request.name;
+                    nameText.style.flex = '1';
+
+                    // Accept button
+                    const acceptBtn = document.createElement('button');
+                    acceptBtn.textContent = 'Accept';
+                    acceptBtn.style.marginRight = '5px';
+                    acceptBtn.onclick = async () => handleFriendRequest(request.id, 'accept');
+
+                    // Delete button
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.onclick = async () => handleFriendRequest(request.id, 'delete');
+
+                    li.appendChild(img);
+                    li.appendChild(nameText);
+                    li.appendChild(acceptBtn);
+                    li.appendChild(deleteBtn);
+                    friendRequestsList.appendChild(li);
+                });
+            } catch (error) {
+                console.error("Error fetching friend requests:", error);
+            }
+        }
+
+        // Handle friend request (accept or delete)
+        async function handleFriendRequest(requestId, action) {
+            try {
+                const response = await fetch(`/api/handleFriendRequest`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ requestId, action }),
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    fetchFriendRequests(); // Refresh friend requests after action
+                    alert(result.message);
+                } else {
+                    alert(result.message || 'Error processing request');
+                }
+            } catch (error) {
+                console.error("Error handling friend request:", error);
+            }
+        }
+
+
+
+
+
+
+    </script>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>const socket = io();
+        const userId = '<%= user._id %>';
+        // Assuming userId is available on the frontend after user authentication
+       socket.emit('joinRoom', { userId, roomId: userId });
+
+
+        // Listen for friend request notifications
+        socket.on('friendRequestNotification', (notification) => {
+            // Handle notification display without refresh
+            const { id, name, profilePhoto } = notification;
+
+            const li = document.createElement('li');
+            li.style.display = 'flex';
+            li.style.alignItems = 'center';
+
+            const img = document.createElement('img');
+            img.src = profilePhoto;
+            img.alt = `${name}'s profile photo`;
+            img.style.width = '40px';
+            img.style.height = '40px';
+            img.style.borderRadius = '50%';
+            img.style.marginRight = '10px';
+
+            const nameText = document.createElement('span');
+            nameText.textContent = name;
+            nameText.style.flex = '1';
+
+            const acceptBtn = document.createElement('button');
+            acceptBtn.textContent = 'Accept';
+            acceptBtn.style.marginRight = '5px';
+            acceptBtn.onclick = async () => handleFriendRequest(id, 'accept');
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.onclick = async () => handleFriendRequest(id, 'delete');
+
+            li.appendChild(img);
+            li.appendChild(nameText);
+            li.appendChild(acceptBtn);
+            li.appendChild(deleteBtn);
+            friendRequestsList.appendChild(li);
+        });
+
+if ("serviceWorker" in navigator && "PushManager" in window) {
+  navigator.serviceWorker
+    .register("/service-worker.js")
+    .then(async (registration) => {
+      // ✅ Wait for registration
+      console.log("Service Worker registered");
+
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array("BOq8m1fzuY9sF2N7K8d_CDydiUj0Kzih-x0sNkI33Fc4jOSBl4lF3INpIcfyNcCiTrWXKWM2eWR1QqAM8iJjZSc"),
+      });
+
+      console.log("Push Subscription:", subscription);
+
+      // ✅ Send subscription to backend
+      await fetch("http://localhost:3000/subscribe", {
+        method: "POST",
+        body: JSON.stringify({userId: userId, subscription}),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      console.log("bheja to hai")
+    })
+    .catch((err) => {
+      console.error("SW registration or push subscription failed:", err);
+    });
+}
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
+}
+
+      
+
+    </script>
+</body>
+
+</html>
