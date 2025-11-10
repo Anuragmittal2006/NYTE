@@ -848,8 +848,6 @@ document.getElementById("vanish-btn").addEventListener("click", async () => {
 
               // Listener for being forced out
             socket.on("forceLogout", () => {
-                // Optional: Add localStorage/session clearing here
-                alert("Emergency logout triggered by your partner!");
                 window.location.href = "/forceLogout";
             });
 
@@ -1391,3 +1389,4 @@ document.getElementById("send-selected").onclick = async () => {
 };
 
 })();
+
