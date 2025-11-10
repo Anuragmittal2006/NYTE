@@ -454,8 +454,8 @@ app.get("/protected", authenticateJWT, async (req, res) => {
 // reuse your authenticateJWT middleware
 app.get("/api/check-plan", authenticateJWT, (req, res) => {
   const plan = req.user?.plan || "free";
-  console.log("checking to hui")
-  return res.json({ allowed: plan === "premium", plan });
+  const allowed = PLANS[plan] !== undefined; // ✅ valid paid plan
+  return res.json({ allowed, plan });
 });
 
 app.get("/reset-password2/:token", async (req, res) => {
@@ -2461,3 +2461,4 @@ server.listen(port, '0.0.0.0', async () => {
     console.error("Error starting ngrok:", err);
   }
 });
+
